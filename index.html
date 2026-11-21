@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReelDeck — Minimal Shorts & Reels Player</title>
+  <title>Shorts — OLED Minimal Player</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Font: Inter & JetBrains Mono for keycaps -->
+  <!-- Google Fonts: Roboto (Official YouTube UI Font) & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
+            sans: ['Roboto', 'system-ui', '-apple-system', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            deck: {
-              bg: '#0a0a0c',
-              surface: '#121216',
-              elevated: '#191920',
-              border: 'rgba(255, 255, 255, 0.08)',
-              accent: '#6366f1',
-              gold: '#fbbf24',
+            oled: {
+              bg: '#000000',
+              surface: '#0f0f0f',
+              btn: '#141414',
+              btnHover: '#242424',
+              border: '#1c1c1c',
+              ytRed: '#FF0033',
             }
           }
         }
@@ -34,33 +34,33 @@
     };
   </script>
   <style>
-    /* Lock viewport to prevent outer scrollbars on desktop */
+    /* Pure #000000 OLED Canvas */
     html, body {
       height: 100vh;
       width: 100vw;
       overflow: hidden;
-      background-color: #0a0a0c;
-      color: #f4f4f6;
+      background-color: #000000;
+      color: #f1f1f1;
       user-select: none;
     }
 
-    /* Custom subtle scrollbar for Saved Reels drawer */
+    /* Ultra-clean dark scrollbar */
     ::-webkit-scrollbar {
       width: 5px;
       height: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: transparent;
+      background: #000000;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.14);
+      background: #272727;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: #3f3f3f;
     }
 
-    /* Keycap styling */
+    /* Keycap badge */
     .kbd {
       display: inline-flex;
       align-items: center;
@@ -71,17 +71,16 @@
       line-height: 1;
       padding: 3px 6px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
-      color: #d4d4d8;
+      background: #141414;
+      border: 1px solid #2a2a2a;
+      color: #e5e5e5;
     }
 
-    /* Reel slide transition animations */
-    @keyframes slideUpIn {
+    /* Smooth vertical Shorts flip animations */
+    @keyframes reelFlipUp {
       from {
         opacity: 0;
-        transform: translateY(22px) scale(0.985);
+        transform: translateY(28px) scale(0.985);
       }
       to {
         opacity: 1;
@@ -89,10 +88,10 @@
       }
     }
 
-    @keyframes slideDownIn {
+    @keyframes reelFlipDown {
       from {
         opacity: 0;
-        transform: translateY(-22px) scale(0.985);
+        transform: translateY(-28px) scale(0.985);
       }
       to {
         opacity: 1;
@@ -101,20 +100,20 @@
     }
 
     .anim-next {
-      animation: slideUpIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: reelFlipUp 0.24s cubic-bezier(0.2, 0, 0, 1) forwards;
     }
 
     .anim-prev {
-      animation: slideDownIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: reelFlipDown 0.24s cubic-bezier(0.2, 0, 0, 1) forwards;
     }
 
-    /* Center feedback pop animation */
-    @keyframes pulsePop {
+    /* Center visual feedback badge */
+    @keyframes centerPop {
       0% {
         opacity: 0;
         transform: translate(-50%, -50%) scale(0.75);
       }
-      20% {
+      18% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1.04);
       }
@@ -129,1244 +128,1438 @@
     }
 
     .center-feedback-active {
-      animation: pulsePop 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: centerPop 0.7s cubic-bezier(0.2, 0, 0, 1) forwards;
+    }
+
+    /* Marquee audio ticker */
+    @keyframes marqueeScroll {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: inline-flex;
+      white-space: nowrap;
+      animation: marqueeScroll 14s linear infinite;
+    }
+
+    /* Custom Range Input for Volume Pill */
+    input[type="range"].yt-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.28);
+      height: 3px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"].yt-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="flex flex-col h-screen w-screen bg-[#0a0a0c] text-zinc-100 antialiased selection:bg-indigo-500/30">
+<body class="flex h-screen w-screen bg-[#000000] text-[#f1f1f1] font-sans antialiased overflow-hidden">
 
-  <!-- TOP MINIMAL NAVIGATION & QUICK-ADD BAR -->
-  <header id="topBar" class="z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 border-b border-white/[0.07] bg-[#0a0a0c]/85 backdrop-blur-xl transition-all duration-300 shrink-0">
-    <!-- Brand -->
-    <div class="flex items-center gap-2.5 shrink-0">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
-          <rect x="6" y="2" width="12" height="20" rx="3" />
-          <polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none" />
-        </svg>
-      </div>
-      <div class="hidden sm:block">
-        <h1 class="text-sm font-bold tracking-tight text-white leading-none">ReelDeck</h1>
-        <p class="text-[11px] text-zinc-500 mt-0.5">Focus Theater</p>
-      </div>
-    </div>
-
-    <!-- Quick-Add URL Form (Supports single or bulk URLs) -->
-    <form id="quickAddForm" class="flex-1 max-w-2xl flex items-center gap-2">
-      <div class="relative flex-1 group">
-        <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+  <!-- ===================================================================== -->
+  <!-- 1. LEFT MINIMAL YOUTUBE SHORTS SIDEBAR RAIL (72px OLED)               -->
+  <!-- ===================================================================== -->
+  <nav id="leftRail" class="z-30 hidden sm:flex flex-col items-center justify-between w-[72px] h-full py-3 bg-[#000000] border-r border-[#141414] shrink-0 transition-all duration-300">
+    <!-- Top Brand + Nav Icons -->
+    <div class="flex flex-col items-center gap-1 w-full px-1.5">
+      <!-- Official-style Shorts Red Logo -->
+      <button
+        id="brandLogoBtn"
+        type="button"
+        title="Shorts Endless Feed"
+        class="w-12 h-12 rounded-2xl hover:bg-[#141414] flex flex-col items-center justify-center mb-2 transition-colors group"
+      >
+        <div class="w-8 h-8 rounded-xl bg-[#FF0033] flex items-center justify-center shadow-[0_0_20px_rgba(255,0,51,0.35)] group-hover:scale-105 transition-transform">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.77 10.32l-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25zM10 14.65v-5.3L15 12l-5 2.65z"/>
           </svg>
         </div>
-        <input
-          id="urlInput"
-          type="text"
-          autocomplete="off"
-          spellcheck="false"
-          placeholder="Paste YouTube Shorts or Facebook Reel link(s)... (supports bulk paste)"
-          class="w-full h-10 pl-9 pr-20 rounded-xl bg-white/[0.04] hover:bg-white/[0.06] focus:bg-white/[0.08] border border-white/[0.08] focus:border-indigo-500/60 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all select-text"
-        />
-        <button
-          type="button"
-          id="pasteBtn"
-          title="Paste from Clipboard"
-          class="absolute inset-y-1.5 right-1.5 px-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-[11px] font-medium text-zinc-300 transition-colors"
-        >
-          Paste
-        </button>
-      </div>
+      </button>
+
+      <!-- Nav: Endless Shorts Feed -->
       <button
-        type="submit"
-        class="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-sm font-medium text-white shadow-md shadow-indigo-600/20 transition-all shrink-0 flex items-center gap-1.5"
+        id="navFeedBtn"
+        type="button"
+        class="rail-nav-btn active w-full py-2.5 rounded-xl bg-[#141414] text-white flex flex-col items-center justify-center gap-1 transition-colors"
       >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z"/>
+        </svg>
+        <span class="text-[10px] font-medium tracking-tight">Shorts</span>
+      </button>
+
+      <!-- Nav: Saved / Bookmarks -->
+      <button
+        id="navSavedBtn"
+        type="button"
+        class="rail-nav-btn relative w-full py-2.5 rounded-xl hover:bg-[#141414] text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+        </svg>
+        <span class="text-[10px] font-medium tracking-tight">Saved</span>
+        <span id="railSavedCount" class="absolute top-1.5 right-2.5 px-1 min-w-[16px] h-4 rounded-full bg-[#FF0033] text-white text-[9px] font-bold flex items-center justify-center">0</span>
+      </button>
+
+      <!-- Nav: Add Links / Playlists -->
+      <button
+        id="navAddBtn"
+        type="button"
+        title="Add YouTube Shorts, Playlists, or Facebook Reels (A)"
+        class="rail-nav-btn w-full py-2.5 rounded-xl hover:bg-[#141414] text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span class="hidden md:inline">Add</span>
+        <span class="text-[10px] font-medium tracking-tight">Add Feed</span>
       </button>
-    </form>
 
-    <!-- Right Action Buttons -->
-    <div class="flex items-center gap-2 shrink-0">
-      <!-- Clear Sample Badges / Queue helper -->
+      <!-- Nav: Categories / Queue -->
       <button
-        id="clearSamplesBtn"
+        id="navQueueBtn"
         type="button"
-        title="Remove pre-loaded sample reels"
-        class="hidden sm:flex items-center gap-1.5 h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all"
+        title="Up Next Queue & Topics"
+        class="rail-nav-btn w-full py-2.5 rounded-xl hover:bg-[#141414] text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 transition-colors"
       >
-        <span>Clear Samples</span>
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10M4 18h6" />
+        </svg>
+        <span class="text-[10px] font-medium tracking-tight">Queue</span>
+      </button>
+    </div>
+
+    <!-- Bottom Rail Utilities -->
+    <div class="flex flex-col items-center gap-1 w-full px-1.5">
+      <button
+        id="navZenBtn"
+        type="button"
+        title="Toggle Zen Mode (F)"
+        class="w-full py-2.5 rounded-xl hover:bg-[#141414] text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        </svg>
+        <span class="text-[10px] font-medium tracking-tight">Zen</span>
       </button>
 
-      <!-- Shortcuts Help Trigger -->
       <button
-        id="helpBtn"
+        id="navHelpBtn"
         type="button"
         title="Keyboard Shortcuts (?)"
-        class="h-10 w-10 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center justify-center text-zinc-300 hover:text-white transition-all"
+        class="w-full py-2.5 rounded-xl hover:bg-[#141414] text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 transition-colors"
       >
-        <span class="font-mono text-sm font-semibold">?</span>
-      </button>
-
-      <!-- Saved / Bookmarks Drawer Toggle -->
-      <button
-        id="bookmarksToggleBtn"
-        type="button"
-        class="h-10 px-3.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.09] flex items-center gap-2 text-sm font-medium text-zinc-100 transition-all"
-      >
-        <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M5 4a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V4z" />
-        </svg>
-        <span class="hidden sm:inline">Saved</span>
-        <span id="bookmarkBadge" class="px-1.5 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-amber-400/15 text-amber-300 border border-amber-400/25">0</span>
+        <span class="w-5 h-5 rounded-full border border-zinc-600 flex items-center justify-center font-mono text-xs font-semibold">?</span>
+        <span class="text-[10px] font-medium tracking-tight">Keys</span>
       </button>
     </div>
-  </header>
+  </nav>
 
-  <!-- MAIN THEATER VIEWPORT -->
-  <main id="theaterMain" class="relative flex-1 flex flex-col items-center justify-center overflow-hidden px-4 py-3">
+  <!-- ===================================================================== -->
+  <!-- 2. MAIN PITCH-BLACK OLED THEATER STAGE                                -->
+  <!-- ===================================================================== -->
+  <main id="theaterStage" class="relative flex-1 flex items-center justify-center h-full bg-[#000000] overflow-hidden">
 
-    <!-- Subtle Ambient Background Glow -->
-    <div class="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-      <div class="w-[440px] h-[680px] rounded-full bg-indigo-600/[0.06] blur-[120px]"></div>
+    <!-- Mobile Top Floating Header (Visible on <640px) -->
+    <div class="sm:hidden fixed top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+      <div class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#141414]/90 border border-[#242424] backdrop-blur-md">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#FF0033]"></span>
+        <span class="text-xs font-bold text-white">Shorts</span>
+      </div>
+      <div class="pointer-events-auto flex items-center gap-1.5">
+        <button id="mobileAddBtn" type="button" class="px-3 py-1.5 rounded-full bg-[#141414]/90 border border-[#242424] text-xs font-medium text-white">+ Add</button>
+        <button id="mobileSavedBtn" type="button" class="px-3 py-1.5 rounded-full bg-[#141414]/90 border border-[#242424] text-xs font-medium text-white">Saved (<span id="mobileSavedCount">0</span>)</button>
+      </div>
     </div>
 
-    <!-- Exit Zen Mode Floating Pill (visible only when Zen mode is active) -->
+    <!-- Unmute Prompt Banner (Appears on initial muted autoplay so 1 click or 'M' unlocks audio forever) -->
     <button
-      id="exitZenBtn"
+      id="unmutePromptBanner"
       type="button"
-      class="hidden fixed top-4 right-4 z-40 px-3.5 py-2 rounded-xl bg-zinc-900/85 hover:bg-zinc-800 border border-white/10 backdrop-blur-md text-xs font-medium text-zinc-300 flex items-center gap-2 shadow-xl transition-all"
+      class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-[#141414]/95 hover:bg-[#242424] border border-[#2a2a2a] text-xs font-medium text-white flex items-center gap-2 shadow-2xl backdrop-blur-md transition-all cursor-pointer group"
     >
-      <span>Exit Zen Mode</span>
-      <span class="kbd">F</span>
+      <span class="w-2 h-2 rounded-full bg-[#FF0033] animate-ping"></span>
+      <svg class="w-4 h-4 text-[#FF0033]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+      </svg>
+      <span>Tap or press <kbd class="kbd mx-0.5">M</kbd> to unmute audio</span>
     </button>
 
-    <!-- Focus Trap Indicator Pill (appears when user clicks inside iframe) -->
-    <div
-      id="focusTrapBanner"
-      class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/30 backdrop-blur-md text-xs text-amber-200 flex items-center gap-2 shadow-lg cursor-pointer"
-      title="Click anywhere outside the video to restore keyboard shortcuts"
+    <!-- Focus Trap Recovery Pill (when user clicks inside iframe) -->
+    <button
+      id="focusTrapPill"
+      type="button"
+      class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 px-3.5 py-1.5 rounded-full bg-[#141414]/95 border border-[#2c2c2c] text-[11px] text-zinc-300 flex items-center gap-2 shadow-xl cursor-pointer"
     >
-      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-      <span>Player focused — click outer area or press <strong class="font-mono">Esc</strong> to restore shortcuts</span>
-    </div>
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>Player focused — click here or press <kbd class="kbd">Esc</kbd> for shortcuts</span>
+    </button>
 
-    <!-- CENTER STAGE: 9:16 PLAYER + RIGHT FLOATING HUD -->
-    <div class="relative z-10 flex items-center justify-center gap-4 sm:gap-6 h-full max-h-full w-full">
+    <!-- Exit Zen Mode Floating Pill -->
+    <button
+      id="exitZenPill"
+      type="button"
+      class="hidden fixed top-4 left-4 z-40 px-3.5 py-1.5 rounded-full bg-[#141414]/90 hover:bg-[#242424] border border-[#282828] text-xs font-medium text-zinc-200 flex items-center gap-2 transition-all"
+    >
+      <span>Exit Zen</span>
+      <kbd class="kbd">F</kbd>
+    </button>
 
-      <!-- Left Queue Mini-Status (Desktop xl+) -->
-      <aside id="leftInfoPanel" class="hidden xl:flex flex-col justify-between w-64 h-[min(82vh,760px)] p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-md transition-opacity duration-300">
-        <div>
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Now Playing</span>
-            <span id="queueCounter" class="text-xs font-mono text-zinc-400">1 / 4</span>
-          </div>
+    <!-- =================================================================== -->
+    <!-- CENTERED 9:16 SHORTS CARD + YOUTUBE DESKTOP RIGHT ACTION COLUMN     -->
+    <!-- =================================================================== -->
+    <div class="relative flex items-end justify-center gap-3 sm:gap-4 h-[calc(100vh-32px)] max-h-[920px]">
 
-          <!-- Platform & Sample Tags -->
-          <div class="flex flex-wrap items-center gap-1.5 mb-2.5" id="metaBadges">
-            <!-- Populated dynamically -->
-          </div>
-
-          <h2 id="reelTitle" class="text-sm font-semibold text-zinc-100 leading-snug line-clamp-3">
-            Loading reel...
-          </h2>
-
-          <p id="reelNoteDisplay" class="mt-2 text-xs text-zinc-400 italic hidden"></p>
-
-          <!-- Facebook Reel Helper Note -->
-          <div id="fbHelperNote" class="hidden mt-4 p-3 rounded-xl bg-blue-500/10 border border-blue-400/20 text-[11px] leading-relaxed text-blue-200/90">
-            <p class="font-semibold text-blue-300 mb-1">Facebook Reel Tip</p>
-            Public reels play directly in embed mode. If Facebook restricts a private reel or starts muted, click inside the player to unmute or use <strong>Open Original</strong> on the right HUD.
-          </div>
-        </div>
-
-        <!-- Up Next Preview List -->
-        <div class="border-t border-white/[0.06] pt-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Queue</span>
-            <button id="clearQueueBtn" type="button" class="text-[11px] text-zinc-500 hover:text-rose-400 transition-colors">Reset</button>
-          </div>
-          <div id="miniQueueList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </aside>
-
-      <!-- 9:16 VERTICAL PLAYER CONTAINER -->
+      <!-- 9:16 VERTICAL VIDEO STAGE -->
       <div
-        id="playerFrameWrapper"
+        id="shortsCard"
         style="aspect-ratio: 9 / 16;"
-        class="relative h-[min(82vh,760px)] max-h-full max-w-[calc(100vw-92px)] rounded-[26px] bg-[#121216] border border-white/[0.11] shadow-[0_24px_80px_rgba(0,0,0,0.85)] overflow-hidden flex items-center justify-center transition-all duration-300"
+        class="relative h-full max-w-[calc(100vw-88px)] sm:max-w-[calc(100vw-180px)] rounded-[16px] bg-[#050505] border border-[#181818] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,1)] flex items-center justify-center"
       >
-        <!-- Dynamic Player Mount Point -->
-        <div id="playerMount" class="w-full h-full bg-black flex items-center justify-center">
-          <!-- YouTube / Facebook iframe injected here -->
-        </div>
+        <!-- IFrame Video Mount -->
+        <div id="videoMount" class="w-full h-full bg-[#000000] flex items-center justify-center"></div>
 
-        <!-- Mobile / Compact Top Overlay Pill inside Player -->
-        <div class="xl:hidden pointer-events-none absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
-          <div id="mobileMetaPill" class="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[11px] font-medium text-zinc-200 flex items-center gap-1.5 truncate">
-            <!-- Populated dynamically -->
+        <!-- TOP-LEFT FLOATING PLAYER CONTROLS (Play/Pause + Mute/Volume + Auto-Advance Pill) -->
+        <div class="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+          <!-- Play/Pause + Volume Pill -->
+          <div class="pointer-events-auto flex items-center gap-1 p-1 rounded-full bg-black/55 hover:bg-black/80 backdrop-blur-md border border-white/10 transition-all group">
+            <!-- Play/Pause Button -->
+            <button
+              id="hudPlayPauseBtn"
+              type="button"
+              title="Play / Pause (Space)"
+              class="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center text-white transition-colors"
+            >
+              <svg id="hudPlayPauseIcon" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            </button>
+
+            <!-- Mute/Unmute Button -->
+            <button
+              id="hudMuteBtn"
+              type="button"
+              title="Mute / Unmute (M)"
+              class="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center text-white transition-colors"
+            >
+              <svg id="hudMuteIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+
+            <!-- Expandable Horizontal Volume Slider on Hover -->
+            <div class="w-0 overflow-hidden group-hover:w-20 transition-all duration-200 flex items-center pr-0 group-hover:pr-2">
+              <input
+                id="volumeSlider"
+                type="range"
+                min="0"
+                max="100"
+                value="85"
+                aria-label="Volume"
+                class="yt-slider w-full"
+              />
+            </div>
           </div>
-          <span id="mobileQueueCounter" class="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[11px] font-mono text-zinc-300 shrink-0">
-            1 / 4
-          </span>
+
+          <!-- Auto-Advance Status Pill -->
+          <button
+            id="autoAdvancePill"
+            type="button"
+            title="Toggle Auto-Advance to Next Short when finished (R)"
+            class="pointer-events-auto px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/80 backdrop-blur-md border border-white/10 text-[11px] font-medium text-white flex items-center gap-1.5 transition-all"
+          >
+            <span id="autoAdvanceDot" class="w-1.5 h-1.5 rounded-full bg-[#FF0033]"></span>
+            <span id="autoAdvanceLabel">Auto-Next: ON</span>
+          </button>
         </div>
 
-        <!-- Center Visual Action Feedback (Play/Pause/Mute/Bookmark) -->
+        <!-- CENTER ACTION POP FEEDBACK -->
         <div
           id="centerFeedback"
-          class="pointer-events-none hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 px-5 py-3.5 rounded-2xl bg-black/75 border border-white/15 backdrop-blur-md flex flex-col items-center gap-1.5 text-white shadow-2xl"
+          class="pointer-events-none hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-16 h-16 rounded-full bg-black/75 border border-white/15 backdrop-blur-md flex flex-col items-center justify-center text-white shadow-2xl"
         >
           <div id="centerFeedbackIcon" class="w-7 h-7 flex items-center justify-center"></div>
-          <span id="centerFeedbackText" class="text-xs font-semibold tracking-wide">Paused</span>
         </div>
 
-        <!-- Empty State (shown if queue is completely empty) -->
-        <div id="emptyQueueState" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-[#121216]">
-          <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-4 text-zinc-400">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
+        <!-- BOTTOM-LEFT OFFICIAL YOUTUBE SHORTS OVERLAY (Channel, Subscribe/Queue, Caption, Audio Ticker) -->
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-24 pb-4 px-4 bg-gradient-to-t from-black/95 via-black/55 to-transparent flex flex-col justify-end">
+          <!-- Channel Row -->
+          <div class="pointer-events-auto flex items-center gap-2.5 mb-2">
+            <div id="channelAvatar" class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FF0033] to-amber-500 flex items-center justify-center text-xs font-bold text-white shrink-0 border border-white/15">
+              YT
+            </div>
+            <div class="min-w-0 flex items-center gap-1.5">
+              <span id="channelHandle" class="text-[13px] font-bold text-white truncate">@YouTubeShorts</span>
+              <span id="platformChip" class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/15 text-zinc-200">Shorts</span>
+            </div>
+            <button
+              id="subscribePillBtn"
+              type="button"
+              class="ml-1 px-3 py-1.5 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-colors shrink-0"
+            >
+              Save
+            </button>
           </div>
-          <h3 class="text-base font-semibold text-white">Your Reel Queue is Empty</h3>
-          <p class="text-xs text-zinc-400 mt-1.5 max-w-[240px] leading-relaxed">
-            Paste a YouTube Shorts or Facebook Reel URL above, or load your saved bookmarks.
+
+          <!-- 2-Line Video Caption / Title -->
+          <p id="videoCaption" class="text-[13.5px] font-normal text-white/95 leading-snug line-clamp-2 mb-2.5 drop-shadow">
+            Loading continuous Shorts feed...
           </p>
-          <div class="flex flex-wrap items-center justify-center gap-2 mt-5">
-            <button id="restoreSamplesEmptyBtn" type="button" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white transition-all">
-              Load Sample Shorts
-            </button>
-            <button id="playSavedEmptyBtn" type="button" class="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] text-xs font-medium text-zinc-200 transition-all">
-              Play Saved Reels
-            </button>
+
+          <!-- Scrolling Audio Track Ticker -->
+          <div class="flex items-center gap-2 text-xs text-white/85 overflow-hidden">
+            <svg class="w-3.5 h-3.5 shrink-0 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+            <div class="overflow-hidden flex-1">
+              <div class="animate-marquee">
+                <span id="audioTrackText" class="mr-8">Original Sound — Endless Shorts Stream</span>
+                <span id="audioTrackTextClone" class="mr-8">Original Sound — Endless Shorts Stream</span>
+              </div>
+            </div>
+            <span id="feedCounterChip" class="text-[10px] font-mono text-zinc-400 shrink-0">#1</span>
           </div>
+        </div>
+
+        <!-- BOTTOM EDGE 3PX INTERACTIVE YOUTUBE RED SCRUBBER BAR -->
+        <div
+          id="scrubberTrack"
+          title="Click to seek"
+          class="absolute inset-x-0 bottom-0 z-30 h-[4px] hover:h-[6px] bg-white/20 cursor-pointer transition-all"
+        >
+          <div id="scrubberFill" class="h-full w-0 bg-[#FF0033] transition-[width] duration-150"></div>
         </div>
       </div>
 
-      <!-- RIGHT FLOATING HUD CONTROLS (Focus-safe buttons) -->
-      <div id="rightHud" class="flex flex-col items-center gap-3 transition-opacity duration-300">
-        <!-- Prev Reel -->
-        <button
-          id="prevReelBtn"
-          type="button"
-          title="Previous Reel (↑ or K)"
-          class="group relative w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-200 hover:text-white shadow-lg transition-all"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-          </svg>
-          <span class="hidden sm:block absolute -left-8 opacity-0 group-hover:opacity-100 transition-opacity kbd">↑</span>
-        </button>
+      <!-- ================================================================= -->
+      <!-- RIGHT-SIDE FLOATING ACTION COLUMN (IDENTICAL TO YOUTUBE SHORTS)   -->
+      <!-- ================================================================= -->
+      <div id="rightActionColumn" class="flex flex-col items-center gap-3.5 pb-2 z-20">
 
-        <!-- Next Reel -->
-        <button
-          id="nextReelBtn"
-          type="button"
-          title="Next Reel (↓ or J)"
-          class="group relative w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-200 hover:text-white shadow-lg transition-all"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-          <span class="hidden sm:block absolute -left-8 opacity-0 group-hover:opacity-100 transition-opacity kbd">↓</span>
-        </button>
+        <!-- 1. Like Button -->
+        <div class="flex flex-col items-center gap-1">
+          <button
+            id="likeActionBtn"
+            type="button"
+            title="Like Short (L)"
+            class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all"
+          >
+            <svg id="likeActionIcon" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+            </svg>
+          </button>
+          <span id="likeActionLabel" class="text-[11px] font-medium text-zinc-300">Like</span>
+        </div>
 
-        <div class="w-6 h-px bg-white/[0.08] my-0.5"></div>
+        <!-- 2. Bookmark / Save Button -->
+        <div class="flex flex-col items-center gap-1">
+          <button
+            id="bookmarkActionBtn"
+            type="button"
+            title="Bookmark / Save for Later (B)"
+            class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all"
+          >
+            <svg id="bookmarkActionIcon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+          <span id="bookmarkActionLabel" class="text-[11px] font-medium text-zinc-300">Save</span>
+        </div>
 
-        <!-- Bookmark / Save -->
-        <button
-          id="bookmarkBtn"
-          type="button"
-          title="Bookmark Reel (B or S)"
-          class="group relative w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-200 hover:text-amber-300 shadow-lg transition-all"
-        >
-          <svg id="bookmarkIcon" class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-          <span class="hidden sm:block absolute -left-8 opacity-0 group-hover:opacity-100 transition-opacity kbd">B</span>
-        </button>
+        <!-- 3. Auto-Next vs Loop Toggle -->
+        <div class="flex flex-col items-center gap-1">
+          <button
+            id="loopModeActionBtn"
+            type="button"
+            title="Switch Auto-Next / Loop Current (R)"
+            class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-[#FF0033] transition-all"
+          >
+            <svg id="loopModeIcon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+          <span id="loopModeLabel" class="text-[11px] font-medium text-zinc-300">Auto</span>
+        </div>
 
-        <!-- Mute / Unmute -->
-        <button
-          id="muteBtn"
-          type="button"
-          title="Mute / Unmute (M)"
-          class="group relative w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-200 hover:text-white shadow-lg transition-all"
-        >
-          <svg id="muteIcon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-          </svg>
-          <span class="hidden sm:block absolute -left-8 opacity-0 group-hover:opacity-100 transition-opacity kbd">M</span>
-        </button>
+        <!-- 4. Open Original Source -->
+        <div class="flex flex-col items-center gap-1">
+          <a
+            id="openSourceActionBtn"
+            href="https://www.youtube.com/shorts/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open on YouTube / Facebook"
+            class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+          <span class="text-[11px] font-medium text-zinc-300">Source</span>
+        </div>
 
-        <!-- Zen / Focus Mode -->
-        <button
-          id="zenBtn"
-          type="button"
-          title="Zen Mode (F)"
-          class="group relative w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-200 hover:text-white shadow-lg transition-all"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-          </svg>
-          <span class="hidden sm:block absolute -left-8 opacity-0 group-hover:opacity-100 transition-opacity kbd">F</span>
-        </button>
+        <!-- 5. More / Add Links & Playlists (⋮) -->
+        <div class="flex flex-col items-center gap-1">
+          <button
+            id="moreActionBtn"
+            type="button"
+            title="Add Links, Playlists, or Filter Feed (A)"
+            class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="1.8" />
+              <circle cx="12" cy="12" r="1.8" />
+              <circle cx="12" cy="19" r="1.8" />
+            </svg>
+          </button>
+          <span class="text-[11px] font-medium text-zinc-300">More</span>
+        </div>
 
-        <!-- Open Original Link -->
-        <a
-          id="openOriginalBtn"
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Open Original Reel in New Tab"
-          class="w-12 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 border border-white/[0.09] backdrop-blur-md flex items-center justify-center text-zinc-300 hover:text-white shadow-lg transition-all"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-
-        <!-- Remove Current Reel from Queue -->
-        <button
-          id="removeCurrentBtn"
-          type="button"
-          title="Remove from Queue (Delete)"
-          class="w-12 h-12 rounded-2xl bg-white/[0.03] hover:bg-rose-500/20 active:scale-95 border border-white/[0.07] hover:border-rose-500/40 backdrop-blur-md flex items-center justify-center text-zinc-400 hover:text-rose-300 shadow-lg transition-all"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
       </div>
     </div>
+
+    <!-- =================================================================== -->
+    <!-- FAR-RIGHT VERTICAL UP / DOWN NAVIGATION ARROWS (DESKTOP YOUTUBE)    -->
+    <!-- =================================================================== -->
+    <div id="farRightNavArrows" class="hidden md:flex flex-col items-center gap-3 fixed right-5 top-1/2 -translate-y-1/2 z-20">
+      <button
+        id="prevShortArrowBtn"
+        type="button"
+        title="Previous Short (↑ or K)"
+        class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 border border-[#222222] flex items-center justify-center text-white shadow-lg transition-all"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
+
+      <button
+        id="nextShortArrowBtn"
+        type="button"
+        title="Next Short (↓ or J)"
+        class="w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 border border-[#222222] flex items-center justify-center text-white shadow-lg transition-all"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </div>
+
   </main>
 
-  <!-- BOTTOM KEYBOARD SHORTCUTS BAR -->
-  <footer id="bottomKeyBar" class="z-20 hidden md:flex items-center justify-center gap-5 h-10 px-4 border-t border-white/[0.06] bg-[#0a0a0c]/90 backdrop-blur-md text-xs text-zinc-400 shrink-0 transition-all duration-300">
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">↑</span><span class="kbd">↓</span>
-      <span>Navigate</span>
-    </div>
-    <span class="text-white/10">•</span>
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">Space</span>
-      <span>Play / Pause</span>
-    </div>
-    <span class="text-white/10">•</span>
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">M</span>
-      <span>Mute</span>
-    </div>
-    <span class="text-white/10">•</span>
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">B</span>
-      <span>Bookmark</span>
-    </div>
-    <span class="text-white/10">•</span>
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">F</span>
-      <span>Zen Mode</span>
-    </div>
-    <span class="text-white/10">•</span>
-    <div class="flex items-center gap-1.5">
-      <span class="kbd">?</span>
-      <span>All Shortcuts</span>
-    </div>
-  </footer>
-
-  <!-- SAVED / BOOKMARKS SLIDE-OVER DRAWER -->
-  <div id="bookmarksOverlay" class="fixed inset-0 z-40 hidden">
-    <!-- Backdrop -->
-    <div id="bookmarksBackdrop" class="absolute inset-0 bg-black/65 backdrop-blur-sm transition-opacity"></div>
-
-    <!-- Drawer Panel -->
-    <aside class="absolute top-0 right-0 bottom-0 w-full max-w-md bg-[#121216] border-l border-white/[0.09] shadow-2xl flex flex-col">
-      <!-- Drawer Header -->
-      <div class="p-5 border-b border-white/[0.08] flex items-center justify-between">
+  <!-- ===================================================================== -->
+  <!-- 3. ADD URLS / PLAYLISTS & DISCOVERY SETTINGS MODAL ('A' KEY)          -->
+  <!-- ===================================================================== -->
+  <div id="addFeedModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div id="addFeedBackdrop" class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-lg rounded-2xl bg-[#0f0f0f] border border-[#242424] p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M5 4a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V4z" />
+          <div class="w-8 h-8 rounded-xl bg-[#FF0033]/15 border border-[#FF0033]/30 flex items-center justify-center text-[#FF0033]">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           </div>
           <div>
-            <h2 class="text-base font-bold text-white">Saved Reels</h2>
-            <p id="savedCountSubtitle" class="text-xs text-zinc-400">0 bookmarked videos</p>
+            <h3 class="text-base font-bold text-white">Add Shorts, Playlists & Reels</h3>
+            <p class="text-xs text-zinc-400">Load YouTube Shorts, YouTube Playlists, or Facebook Reels</p>
           </div>
         </div>
-        <button id="closeDrawerBtn" type="button" class="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-colors">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <button id="closeAddFeedBtn" type="button" class="p-2 rounded-full bg-[#181818] hover:bg-[#262626] text-zinc-400 hover:text-white">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <!-- Filter Tabs & Play All -->
-      <div class="px-5 py-3 border-b border-white/[0.07] flex items-center justify-between gap-2 bg-white/[0.01]">
-        <div class="flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/[0.06]" id="platformFilterGroup">
-          <button type="button" data-filter="all" class="filter-tab active px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 text-white transition-all">All</button>
-          <button type="button" data-filter="youtube" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all">YouTube</button>
-          <button type="button" data-filter="facebook" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all">Facebook</button>
+      <!-- URL / Bulk Input Form -->
+      <form id="addFeedForm" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+            Paste URL(s) or YouTube Playlist ID
+          </label>
+          <textarea
+            id="bulkUrlTextarea"
+            rows="3"
+            placeholder="Examples:&#10;https://www.youtube.com/shorts/dQw4w9WgXcQ&#10;https://www.youtube.com/playlist?list=PL...&#10;https://www.facebook.com/reel/123456789"
+            class="w-full p-3 rounded-xl bg-[#000000] border border-[#262626] focus:border-[#FF0033] text-xs text-white placeholder-zinc-600 outline-none select-text resize-none"
+          ></textarea>
         </div>
 
-        <button
-          id="playAllBookmarksBtn"
-          type="button"
-          class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all"
-        >
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <polygon points="6 4 20 12 6 20 6 4" />
+        <div class="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            id="pasteFromClipboardModalBtn"
+            class="px-3 py-2 rounded-xl bg-[#181818] hover:bg-[#242424] text-xs font-medium text-zinc-300 transition-colors"
+          >
+            Paste from Clipboard
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2 rounded-xl bg-[#FF0033] hover:bg-[#e0002d] text-xs font-bold text-white shadow-lg shadow-[#FF0033]/20 transition-all"
+          >
+            Load & Play Now
+          </button>
+        </div>
+      </form>
+
+      <!-- Category / Topic Filter for Endless Auto-Discovery -->
+      <div class="mt-5 pt-4 border-t border-[#1e1e1e]">
+        <div class="flex items-center justify-between mb-2.5">
+          <div>
+            <span class="text-xs font-bold text-white">Endless Auto-Discovery Feed</span>
+            <p class="text-[11px] text-zinc-400">Continuously auto-loads & auto-advances Shorts</p>
+          </div>
+          <button
+            id="toggleDiscoveryModeBtn"
+            type="button"
+            class="px-3 py-1 rounded-full bg-[#FF0033] text-white text-[11px] font-bold transition-all"
+          >
+            ON
+          </button>
+        </div>
+
+        <!-- Topic Pills -->
+        <div class="flex flex-wrap gap-1.5 mt-2" id="topicPillsContainer">
+          <button type="button" data-topic="all" class="topic-pill px-3 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all">All Topics</button>
+          <button type="button" data-topic="tech" class="topic-pill px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] text-zinc-300 text-xs font-medium transition-all">Tech & Coding</button>
+          <button type="button" data-topic="nature" class="topic-pill px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] text-zinc-300 text-xs font-medium transition-all">Nature & 4K</button>
+          <button type="button" data-topic="science" class="topic-pill px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] text-zinc-300 text-xs font-medium transition-all">Science & Space</button>
+          <button type="button" data-topic="creative" class="topic-pill px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] text-zinc-300 text-xs font-medium transition-all">Satisfying & Art</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 4. SAVED BOOKMARKS & QUEUE SLIDE-OVER DRAWER                          -->
+  <!-- ===================================================================== -->
+  <div id="drawerOverlay" class="fixed inset-0 z-50 hidden">
+    <div id="drawerBackdrop" class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+    <aside class="absolute top-0 right-0 bottom-0 w-full max-w-md bg-[#0b0b0b] border-l border-[#1c1c1c] shadow-2xl flex flex-col">
+      <!-- Drawer Header Tabs -->
+      <div class="p-4 border-b border-[#1c1c1c] flex items-center justify-between">
+        <div class="flex items-center gap-1.5 bg-[#141414] p-1 rounded-full border border-[#222222]">
+          <button
+            id="drawerTabSaved"
+            type="button"
+            class="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all"
+          >
+            Saved (<span id="drawerSavedTabCount">0</span>)
+          </button>
+          <button
+            id="drawerTabQueue"
+            type="button"
+            class="px-3.5 py-1.5 rounded-full text-zinc-400 hover:text-white text-xs font-medium transition-all"
+          >
+            Up Next (<span id="drawerQueueTabCount">0</span>)
+          </button>
+        </div>
+
+        <button id="closeDrawerBtn" type="button" class="p-2 rounded-full bg-[#141414] hover:bg-[#242424] text-zinc-400 hover:text-white">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Play All</span>
         </button>
       </div>
 
-      <!-- Bookmarks List Container -->
-      <div id="bookmarksList" class="flex-1 overflow-y-auto p-4 space-y-2.5">
-        <!-- Populated dynamically -->
+      <!-- SAVED VIEW -->
+      <div id="savedDrawerView" class="flex-1 flex flex-col overflow-hidden">
+        <!-- Search & Filter Bar -->
+        <div class="p-3.5 border-b border-[#181818] space-y-2.5">
+          <input
+            id="bookmarkSearchInput"
+            type="text"
+            placeholder="Search saved reels or notes..."
+            class="w-full px-3.5 py-2 rounded-xl bg-[#141414] border border-[#222222] focus:border-white/30 text-xs text-white placeholder-zinc-500 outline-none select-text"
+          />
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1" id="savedFilterPills">
+              <button type="button" data-filter="all" class="saved-filter px-2.5 py-1 rounded-full bg-white text-black text-[11px] font-bold">All</button>
+              <button type="button" data-filter="youtube" class="saved-filter px-2.5 py-1 rounded-full bg-[#141414] text-zinc-400 hover:text-white text-[11px] font-medium">YouTube</button>
+              <button type="button" data-filter="facebook" class="saved-filter px-2.5 py-1 rounded-full bg-[#141414] text-zinc-400 hover:text-white text-[11px] font-medium">Facebook</button>
+            </div>
+
+            <button
+              id="playSavedQueueBtn"
+              type="button"
+              class="px-3 py-1 rounded-full bg-[#FF0033] hover:bg-[#e0002d] text-white text-[11px] font-bold flex items-center gap-1 transition-all"
+            >
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              <span>Play Saved</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bookmarks List -->
+        <div id="bookmarksContainer" class="flex-1 overflow-y-auto p-3.5 space-y-2"></div>
+
+        <!-- JSON Backup Footer -->
+        <div class="p-3.5 border-t border-[#181818] bg-[#050505] flex items-center gap-2">
+          <button
+            id="exportJsonBtn"
+            type="button"
+            class="flex-1 py-2 rounded-xl bg-[#141414] hover:bg-[#222222] border border-[#222222] text-xs font-medium text-zinc-200 transition-colors"
+          >
+            Export JSON
+          </button>
+          <label
+            for="importJsonInput"
+            class="flex-1 py-2 rounded-xl bg-[#141414] hover:bg-[#222222] border border-[#222222] text-xs font-medium text-zinc-200 text-center cursor-pointer transition-colors"
+          >
+            Import JSON
+          </label>
+          <input id="importJsonInput" type="file" accept=".json,application/json" class="hidden" />
+        </div>
       </div>
 
-      <!-- Export / Import Footer -->
-      <div class="p-4 border-t border-white/[0.08] bg-black/30 flex items-center justify-between gap-2">
-        <button
-          id="exportBookmarksBtn"
-          type="button"
-          class="flex-1 py-2 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-xs font-medium text-zinc-200 flex items-center justify-center gap-1.5 transition-all"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>Export JSON</span>
-        </button>
-
-        <label
-          for="importBookmarksInput"
-          class="flex-1 py-2 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-xs font-medium text-zinc-200 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <span>Import JSON</span>
-        </label>
-        <input id="importBookmarksInput" type="file" accept=".json,application/json" class="hidden" />
+      <!-- UP NEXT QUEUE VIEW -->
+      <div id="queueDrawerView" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div class="p-3.5 border-b border-[#181818] flex items-center justify-between">
+          <span class="text-xs text-zinc-400">Auto-loads more Shorts near end of feed</span>
+          <button id="shuffleQueueBtn" type="button" class="px-3 py-1 rounded-full bg-[#141414] hover:bg-[#242424] text-xs font-medium text-white">
+            Shuffle Feed
+          </button>
+        </div>
+        <div id="queueListContainer" class="flex-1 overflow-y-auto p-3.5 space-y-1.5"></div>
       </div>
     </aside>
   </div>
 
-  <!-- KEYBOARD SHORTCUTS CHEAT-SHEET MODAL -->
+  <!-- ===================================================================== -->
+  <!-- 5. KEYBOARD SHORTCUTS MODAL ('?' KEY)                                 -->
+  <!-- ===================================================================== -->
   <div id="shortcutsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-    <div id="shortcutsBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-    <div class="relative w-full max-w-md rounded-2xl bg-[#16161c] border border-white/[0.12] p-6 shadow-2xl">
+    <div id="shortcutsBackdrop" class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md rounded-2xl bg-[#0f0f0f] border border-[#242424] p-6 shadow-2xl">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-base font-bold text-white">Keyboard Shortcuts</h3>
-        <button id="closeShortcutsBtn" type="button" class="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white">
+        <button id="closeShortcutsBtn" type="button" class="p-1.5 rounded-full bg-[#181818] hover:bg-[#262626] text-zinc-400 hover:text-white">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <div class="space-y-2.5 text-sm">
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
-          <span class="text-zinc-300">Next Reel</span>
-          <div class="flex gap-1"><span class="kbd">↓</span><span class="kbd">J</span></div>
+      <div class="space-y-2 text-xs">
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Next Short / Reel</span>
+          <div class="flex gap-1"><kbd class="kbd">↓</kbd><kbd class="kbd">J</kbd><span class="text-zinc-500 ml-1">or Scroll</span></div>
         </div>
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
-          <span class="text-zinc-300">Previous Reel</span>
-          <div class="flex gap-1"><span class="kbd">↑</span><span class="kbd">K</span></div>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Previous Short / Reel</span>
+          <div class="flex gap-1"><kbd class="kbd">↑</kbd><kbd class="kbd">K</kbd></div>
         </div>
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
-          <span class="text-zinc-300">Play / Pause (YouTube)</span>
-          <span class="kbd">Space</span>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Play / Pause</span>
+          <kbd class="kbd">Space</kbd>
         </div>
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
-          <span class="text-zinc-300">Mute / Unmute (YouTube)</span>
-          <span class="kbd">M</span>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Mute / Unmute Audio</span>
+          <kbd class="kbd">M</kbd>
         </div>
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
           <span class="text-zinc-300">Bookmark / Save Reel</span>
-          <div class="flex gap-1"><span class="kbd">B</span><span class="kbd">S</span></div>
+          <div class="flex gap-1"><kbd class="kbd">B</kbd><kbd class="kbd">S</kbd></div>
         </div>
-        <div class="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
-          <span class="text-zinc-300">Toggle Zen / Focus Mode</span>
-          <span class="kbd">F</span>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Like Short</span>
+          <kbd class="kbd">L</kbd>
         </div>
-        <div class="flex items-center justify-between py-1.5">
-          <span class="text-zinc-300">Remove Current from Queue</span>
-          <span class="kbd">Del</span>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Toggle Auto-Next vs Loop</span>
+          <kbd class="kbd">R</kbd>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+          <span class="text-zinc-300">Add Links / Playlists</span>
+          <kbd class="kbd">A</kbd>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <span class="text-zinc-300">Pure Zen Mode</span>
+          <kbd class="kbd">F</kbd>
         </div>
       </div>
-
-      <p class="mt-4 text-[11px] text-zinc-400 leading-relaxed bg-white/[0.03] p-3 rounded-xl border border-white/[0.06]">
-        <strong>Tip:</strong> If you click inside the video player iframe, press <span class="kbd">Esc</span> or click the dark background outside the frame to immediately restore keyboard navigation.
-      </p>
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toastContainer" class="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none"></div>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none"></div>
 
   <!-- YouTube IFrame Player API -->
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
     /**
-     * ReelDeck Application State & Logic
-     * Single-file minimal Shorts & Reels theater player
+     * OLED YouTube Shorts & Facebook Reels Continuous Player
+     * Pure #000000 theme, auto-discovery pool, oEmbed metadata, and auto-advance engine.
      */
     (function () {
       'use strict';
 
-      // ==========================================
-      // 1. SAMPLE DATA & STORAGE KEYS
-      // ==========================================
-      const STORAGE_BOOKMARKS_KEY = 'reeldeck_bookmarks_v1';
-      const STORAGE_QUEUE_KEY = 'reeldeck_queue_v1';
+      // =========================================================================
+      // 1. CURATED MULTI-CATEGORY AUTO-DISCOVERY POOL (VERIFIED EMBEDDABLE SHORTS)
+      // =========================================================================
+      const DISCOVERY_POOL = [
+        // Tech & Coding
+        { videoId: 'aqz-KE-bpKQ', topic: 'tech', title: 'Big Buck Bunny 60fps — High Frame Rate Test', author: '@BlenderStudio' },
+        { videoId: 'jNQXAC9IVRw', topic: 'tech', title: 'Me at the zoo — Where YouTube Began', author: '@jawed' },
+        { videoId: 'M7lc1UVf-VE', topic: 'tech', title: 'YouTube Developers Live — API Showcase', author: '@GoogleDevelopers' },
+        { videoId: 'ysz5S6PUM-U', topic: 'tech', title: 'Modern Minimal Desk & Studio Setup', author: '@TechMinimal' },
+        { videoId: 'ScMzIvxBSi4', topic: 'tech', title: 'Clean UI Motion & Micro-Interactions', author: '@DesignSystems' },
+        { videoId: 'bTqVqk7FSmY', topic: 'tech', title: 'Mechanical Keyboard Sound Test ASMR', author: '@KeycapsLab' },
+        { videoId: 'aircAruvnKk', topic: 'tech', title: 'But what is a Neural Network? Visualized', author: '@3Blue1Brown' },
+        { videoId: 'rfscVS0vtbw', topic: 'tech', title: 'Python Automation in 60 Seconds', author: '@freeCodeCamp' },
 
-      const SAMPLE_REELS = [
-        {
-          id: 'yt_aqz-KE-bpKQ',
-          platform: 'youtube',
-          videoId: 'aqz-KE-bpKQ',
-          originalUrl: 'https://www.youtube.com/shorts/aqz-KE-bpKQ',
-          title: 'Big Buck Bunny 60fps — Sample Short',
-          note: '',
-          isSample: true,
-          addedAt: Date.now()
-        },
-        {
-          id: 'yt_LXb3EKWsInQ',
-          platform: 'youtube',
-          videoId: 'LXb3EKWsInQ',
-          originalUrl: 'https://www.youtube.com/shorts/LXb3EKWsInQ',
-          title: 'Costa Rica in 4K HDR — Nature Sample',
-          note: '',
-          isSample: true,
-          addedAt: Date.now()
-        },
-        {
-          id: 'yt_jNQXAC9IVRw',
-          platform: 'youtube',
-          videoId: 'jNQXAC9IVRw',
-          originalUrl: 'https://www.youtube.com/shorts/jNQXAC9IVRw',
-          title: 'Me at the zoo — Classic Sample',
-          note: '',
-          isSample: true,
-          addedAt: Date.now()
-        }
+        // Nature & 4K Scenery
+        { videoId: 'LXb3EKWsInQ', topic: 'nature', title: 'Costa Rica in 4K HDR — Tropical Wildlife', author: '@JacobKatieSchwarz' },
+        { videoId: 'BHACKCNDMW8', topic: 'nature', title: '3 Hours of Relaxing Ocean Waves & Coral Reefs', author: '@4KNature' },
+        { videoId: 'eKFTSSKCzWA', topic: 'nature', title: 'Misty Alpine Forest Morning Rain', author: '@NatureSounds' },
+        { videoId: 'tO01J-M3g0U', topic: 'nature', title: 'Patagonia Glaciers & Mountain Peaks 4K', author: '@EarthVisuals' },
+        { videoId: 'linlz7-Pnvw', topic: 'nature', title: 'Switzerland Drone Flight Over Emerald Lakes', author: '@ScenicWorld' },
+        { videoId: 'ysz5S6PUM-U', topic: 'nature', title: 'Golden Hour Sunset Over the Pacific', author: '@Horizon4K' },
+        { videoId: '6v2L2UGZJAM', topic: 'nature', title: 'Northern Lights Aurora Borealis Timelapse', author: '@ArcticSky' },
+        { videoId: 'aqz-KE-bpKQ', topic: 'nature', title: 'Forest Canopy Sunlight & Wildlife', author: '@WildEarth' },
+
+        // Science & Space
+        { videoId: 'libKVRa01L8', topic: 'science', title: 'Solar System 101 — National Geographic', author: '@NatGeo' },
+        { videoId: '0qo78R_yYFA', topic: 'science', title: 'Falcon Heavy & Starman Orbital Launch', author: '@SpaceX' },
+        { videoId: 'H999s0P1Er0', topic: 'science', title: 'James Webb Space Telescope Deep Field', author: '@NASA' },
+        { videoId: 'QqsLTNkzvaY', topic: 'science', title: 'Quantum Physics & Double Slit Experiment', author: '@Veritasium' },
+        { videoId: 'uD4izuDMUQA', topic: 'science', title: 'Timelapse of the Entire Future Universe', author: '@melodysheep' },
+        { videoId: 'sNhhvQGsMEc', topic: 'science', title: 'Why Earth is the Pale Blue Dot', author: '@Kurzgesagt' },
+        { videoId: 'p_8yK2kmxoo', topic: 'science', title: 'Zero Gravity Water Droplet on the ISS', author: '@ISS_Research' },
+        { videoId: 'JhHMJCUmq28', topic: 'science', title: 'Quantum Computers Explained Simply', author: '@Kurzgesagt' },
+
+        // Satisfying, Music & Creative
+        { videoId: '5qap5aO4i9A', topic: 'creative', title: 'Lofi Hip Hop Beats — Late Night Chill', author: '@LofiGirl' },
+        { videoId: 'jfKfPfyJRdk', topic: 'creative', title: 'Study & Focus Synthwave Stream', author: '@LofiGirl' },
+        { videoId: 'rUxyKA_-grg', topic: 'creative', title: 'Cozy Rainy Night Jazz & Coffee Shop', author: '@CafeMusicBGM' },
+        { videoId: '2OEL4P1Rz04', topic: 'creative', title: 'Ambient Deep Space Focus Soundscape', author: '@AmbientWorlds' },
+        { videoId: 'EngW7tLk6R8', topic: 'creative', title: 'Satisfying Fluid Physics Simulation', author: '@MotionArt' },
+        { videoId: 'C0DPdy98e4c', topic: 'creative', title: 'Minimalist Audio-Visual Rhythm Test', author: '@SoundLab' },
+        { videoId: 'hHW1oY26kxQ', topic: 'creative', title: 'Tokyo Midnight Neon Street Walk', author: '@TokyoExplorer' },
+        { videoId: 'n61ULEU7CO0', topic: 'creative', title: 'Best of Lofi Beats — Chill Instrumentals', author: '@LofiGirl' }
       ];
 
-      // ==========================================
-      // 2. STATE MANAGEMENT
-      // ==========================================
-      let queue = [];
+      // =========================================================================
+      // 2. STORAGE KEYS & APPLICATION STATE
+      // =========================================================================
+      const STORAGE_BOOKMARKS = 'oled_shorts_bookmarks_v2';
+      const STORAGE_LIKED = 'oled_shorts_liked_v2';
+
+      let feedQueue = [];
       let currentIndex = 0;
       let bookmarks = [];
-      let activeFilter = 'all';
+      let likedIds = new Set();
+      let oembedCache = {};
+
+      let activeTopic = 'all';
+      let endlessDiscoveryEnabled = true;
+      let autoAdvanceEnabled = true; // Default ON: auto-advances to next reel when ended
+      let isMuted = true;            // Default true on initial load for guaranteed browser autoplay
+      let hasUserUnmutedOnce = false;
+      let volumeLevel = 85;
       let isZenMode = false;
-      let isMuted = false;
-      let isPaused = false;
+      let savedFilter = 'all';
+      let savedSearchQuery = '';
+
       let ytPlayer = null;
       let ytApiReady = false;
-      let focusMonitorInterval = null;
+      let progressTimer = null;
+      let activePlaylistId = null;
 
-      // ==========================================
-      // 3. DOM ELEMENTS
-      // ==========================================
-      const topBar = document.getElementById('topBar');
-      const bottomKeyBar = document.getElementById('bottomKeyBar');
-      const leftInfoPanel = document.getElementById('leftInfoPanel');
-      const exitZenBtn = document.getElementById('exitZenBtn');
-      const focusTrapBanner = document.getElementById('focusTrapBanner');
+      // =========================================================================
+      // 3. DOM REFERENCES
+      // =========================================================================
+      const leftRail = document.getElementById('leftRail');
+      const farRightNavArrows = document.getElementById('farRightNavArrows');
+      const shortsCard = document.getElementById('shortsCard');
+      const videoMount = document.getElementById('videoMount');
 
-      const quickAddForm = document.getElementById('quickAddForm');
-      const urlInput = document.getElementById('urlInput');
-      const pasteBtn = document.getElementById('pasteBtn');
-      const clearSamplesBtn = document.getElementById('clearSamplesBtn');
+      const unmutePromptBanner = document.getElementById('unmutePromptBanner');
+      const focusTrapPill = document.getElementById('focusTrapPill');
+      const exitZenPill = document.getElementById('exitZenPill');
 
-      const playerFrameWrapper = document.getElementById('playerFrameWrapper');
-      const playerMount = document.getElementById('playerMount');
-      const emptyQueueState = document.getElementById('emptyQueueState');
+      // Top-left HUD controls
+      const hudPlayPauseBtn = document.getElementById('hudPlayPauseBtn');
+      const hudPlayPauseIcon = document.getElementById('hudPlayPauseIcon');
+      const hudMuteBtn = document.getElementById('hudMuteBtn');
+      const hudMuteIcon = document.getElementById('hudMuteIcon');
+      const volumeSlider = document.getElementById('volumeSlider');
+      const autoAdvancePill = document.getElementById('autoAdvancePill');
+      const autoAdvanceDot = document.getElementById('autoAdvanceDot');
+      const autoAdvanceLabel = document.getElementById('autoAdvanceLabel');
+
+      // Bottom-left metadata overlay
+      const channelAvatar = document.getElementById('channelAvatar');
+      const channelHandle = document.getElementById('channelHandle');
+      const platformChip = document.getElementById('platformChip');
+      const subscribePillBtn = document.getElementById('subscribePillBtn');
+      const videoCaption = document.getElementById('videoCaption');
+      const audioTrackText = document.getElementById('audioTrackText');
+      const audioTrackTextClone = document.getElementById('audioTrackTextClone');
+      const feedCounterChip = document.getElementById('feedCounterChip');
+      const scrubberTrack = document.getElementById('scrubberTrack');
+      const scrubberFill = document.getElementById('scrubberFill');
+
+      // Right action column buttons
+      const likeActionBtn = document.getElementById('likeActionBtn');
+      const likeActionLabel = document.getElementById('likeActionLabel');
+      const bookmarkActionBtn = document.getElementById('bookmarkActionBtn');
+      const bookmarkActionIcon = document.getElementById('bookmarkActionIcon');
+      const bookmarkActionLabel = document.getElementById('bookmarkActionLabel');
+      const loopModeActionBtn = document.getElementById('loopModeActionBtn');
+      const loopModeIcon = document.getElementById('loopModeIcon');
+      const loopModeLabel = document.getElementById('loopModeLabel');
+      const openSourceActionBtn = document.getElementById('openSourceActionBtn');
+      const moreActionBtn = document.getElementById('moreActionBtn');
+
+      // Center feedback
       const centerFeedback = document.getElementById('centerFeedback');
       const centerFeedbackIcon = document.getElementById('centerFeedbackIcon');
-      const centerFeedbackText = document.getElementById('centerFeedbackText');
 
-      const queueCounter = document.getElementById('queueCounter');
-      const mobileQueueCounter = document.getElementById('mobileQueueCounter');
-      const metaBadges = document.getElementById('metaBadges');
-      const mobileMetaPill = document.getElementById('mobileMetaPill');
-      const reelTitle = document.getElementById('reelTitle');
-      const reelNoteDisplay = document.getElementById('reelNoteDisplay');
-      const fbHelperNote = document.getElementById('fbHelperNote');
-      const miniQueueList = document.getElementById('miniQueueList');
+      // Modals & Drawers
+      const addFeedModal = document.getElementById('addFeedModal');
+      const bulkUrlTextarea = document.getElementById('bulkUrlTextarea');
+      const toggleDiscoveryModeBtn = document.getElementById('toggleDiscoveryModeBtn');
 
-      // HUD Buttons
-      const prevReelBtn = document.getElementById('prevReelBtn');
-      const nextReelBtn = document.getElementById('nextReelBtn');
-      const bookmarkBtn = document.getElementById('bookmarkBtn');
-      const bookmarkIcon = document.getElementById('bookmarkIcon');
-      const muteBtn = document.getElementById('muteBtn');
-      const muteIcon = document.getElementById('muteIcon');
-      const zenBtn = document.getElementById('zenBtn');
-      const openOriginalBtn = document.getElementById('openOriginalBtn');
-      const removeCurrentBtn = document.getElementById('removeCurrentBtn');
+      const drawerOverlay = document.getElementById('drawerOverlay');
+      const savedDrawerView = document.getElementById('savedDrawerView');
+      const queueDrawerView = document.getElementById('queueDrawerView');
+      const bookmarksContainer = document.getElementById('bookmarksContainer');
+      const queueListContainer = document.getElementById('queueListContainer');
+      const bookmarkSearchInput = document.getElementById('bookmarkSearchInput');
 
-      // Bookmarks Drawer
-      const bookmarksToggleBtn = document.getElementById('bookmarksToggleBtn');
-      const bookmarkBadge = document.getElementById('bookmarkBadge');
-      const bookmarksOverlay = document.getElementById('bookmarksOverlay');
-      const bookmarksBackdrop = document.getElementById('bookmarksBackdrop');
-      const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-      const savedCountSubtitle = document.getElementById('savedCountSubtitle');
-      const bookmarksList = document.getElementById('bookmarksList');
-      const playAllBookmarksBtn = document.getElementById('playAllBookmarksBtn');
-      const exportBookmarksBtn = document.getElementById('exportBookmarksBtn');
-      const importBookmarksInput = document.getElementById('importBookmarksInput');
-
-      // Shortcuts Modal
-      const helpBtn = document.getElementById('helpBtn');
       const shortcutsModal = document.getElementById('shortcutsModal');
-      const shortcutsBackdrop = document.getElementById('shortcutsBackdrop');
-      const closeShortcutsBtn = document.getElementById('closeShortcutsBtn');
 
-      // ==========================================
-      // 4. URL PARSER (YouTube Shorts & FB Reels)
-      // ==========================================
-      function parseReelUrl(rawUrl) {
-        if (!rawUrl || typeof rawUrl !== 'string') return null;
-        let trimmed = rawUrl.trim();
-        if (!trimmed) return null;
-
-        // Prepend https:// if user omitted protocol
-        if (!/^https?:\/\//i.test(trimmed)) {
-          trimmed = 'https://' + trimmed;
+      // =========================================================================
+      // 4. DISCOVERY & INFINITE FEED GENERATOR
+      // =========================================================================
+      function shuffleArray(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
         }
+        return copy;
+      }
 
-        let urlObj;
-        try {
-          urlObj = new URL(trimmed);
-        } catch (e) {
-          return null;
+      function generateDiscoveryBatch(count = 8) {
+        let candidates = DISCOVERY_POOL.filter((item) => {
+          if (activeTopic === 'all') return true;
+          return item.topic === activeTopic;
+        });
+        if (candidates.length === 0) candidates = DISCOVERY_POOL;
+
+        const shuffled = shuffleArray(candidates);
+        const batch = [];
+        for (let i = 0; i < count; i++) {
+          const pick = shuffled[i % shuffled.length];
+          batch.push({
+            uid: `yt_${pick.videoId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            id: `yt_${pick.videoId}`,
+            platform: 'youtube',
+            videoId: pick.videoId,
+            originalUrl: `https://www.youtube.com/shorts/${pick.videoId}`,
+            title: pick.title,
+            author: pick.author,
+            topic: pick.topic
+          });
         }
-
-        const hostname = urlObj.hostname.replace(/^www\./, '').toLowerCase();
-
-        // 1. YouTube Detection (youtube.com/shorts/ID, youtube.com/watch?v=ID, youtu.be/ID, m.youtube.com)
-        if (hostname === 'youtube.com' || hostname === 'm.youtube.com' || hostname === 'youtu.be') {
-          let videoId = null;
-
-          if (hostname === 'youtu.be') {
-            videoId = urlObj.pathname.split('/').filter(Boolean)[0];
-          } else if (urlObj.pathname.startsWith('/shorts/')) {
-            videoId = urlObj.pathname.split('/shorts/')[1]?.split('/')[0];
-          } else if (urlObj.pathname.startsWith('/embed/')) {
-            videoId = urlObj.pathname.split('/embed/')[1]?.split('/')[0];
-          } else if (urlObj.searchParams.get('v')) {
-            videoId = urlObj.searchParams.get('v');
-          }
-
-          // Validate standard 11-character YouTube ID
-          if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-            return {
-              id: `yt_${videoId}`,
-              platform: 'youtube',
-              videoId: videoId,
-              originalUrl: `https://www.youtube.com/shorts/${videoId}`,
-              title: `YouTube Short (${videoId})`,
-              note: '',
-              isSample: false,
-              addedAt: Date.now()
-            };
-          }
-        }
-
-        // 2. Facebook Detection (facebook.com/reel/ID, facebook.com/watch/?v=ID, fb.watch/ID, facebook.com/share/r/ID)
-        if (
-          hostname === 'facebook.com' ||
-          hostname === 'm.facebook.com' ||
-          hostname === 'web.facebook.com' ||
-          hostname === 'fb.watch'
-        ) {
-          // Clean tracking query params while preserving essential video ID params
-          const cleanUrlObj = new URL(urlObj.href);
-          const vParam = cleanUrlObj.searchParams.get('v');
-          cleanUrlObj.search = '';
-          if (vParam) {
-            cleanUrlObj.searchParams.set('v', vParam);
-          }
-          const cleanHref = cleanUrlObj.toString();
-
-          // Generate deterministic ID from path or query
-          const slug = (urlObj.pathname + (vParam || '')).replace(/[^a-zA-Z0-9]/g, '').slice(-18) || String(Date.now());
-
-          return {
-            id: `fb_${slug}`,
-            platform: 'facebook',
-            videoId: slug,
-            originalUrl: cleanHref,
-            title: `Facebook Reel (${slug.slice(0, 10)})`,
-            note: '',
-            isSample: false,
-            addedAt: Date.now()
-          };
-        }
-
-        return null;
+        return batch;
       }
 
       /**
-       * Extract multiple URLs from pasted text (newline, space, or comma separated)
+       * Automatically refills the feed whenever the user is within 3 videos of the end
        */
-      function parseBulkInput(text) {
-        const tokens = text.split(/[\s,]+/).filter(Boolean);
-        const parsed = [];
-        for (const token of tokens) {
-          const item = parseReelUrl(token);
-          if (item) {
-            parsed.push(item);
-          }
+      function ensureInfiniteFeed() {
+        if (!endlessDiscoveryEnabled) return;
+        if (feedQueue.length - currentIndex <= 3) {
+          const more = generateDiscoveryBatch(8);
+          feedQueue.push(...more);
+          updateCounters();
         }
-        return parsed;
       }
 
-      // ==========================================
-      // 5. LOCALSTORAGE PERSISTENCE
-      // ==========================================
-      function loadStateFromStorage() {
-        try {
-          const savedBookmarks = localStorage.getItem(STORAGE_BOOKMARKS_KEY);
-          if (savedBookmarks) {
-            bookmarks = JSON.parse(savedBookmarks);
+      // =========================================================================
+      // 5. YOUTUBE OEMBED REAL METADATA FETCHER
+      // =========================================================================
+      async function enrichMetadataViaOEmbed(item) {
+        if (!item || item.platform !== 'youtube') return;
+        if (oembedCache[item.videoId]) {
+          const cached = oembedCache[item.videoId];
+          item.title = cached.title;
+          item.author = cached.author;
+          if (feedQueue[currentIndex]?.uid === item.uid) {
+            updateOverlayMetadata(item);
           }
-        } catch (err) {
-          console.error('Failed to load bookmarks:', err);
-          bookmarks = [];
+          return;
         }
 
         try {
-          const savedQueue = localStorage.getItem(STORAGE_QUEUE_KEY);
-          if (savedQueue) {
-            const parsedQueue = JSON.parse(savedQueue);
-            if (Array.isArray(parsedQueue) && parsedQueue.length > 0) {
-              queue = parsedQueue;
-              return;
+          const targetUrl = encodeURIComponent(`https://www.youtube.com/watch?v=${item.videoId}`);
+          const res = await fetch(`https://www.youtube.com/oembed?url=${targetUrl}&format=json`);
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.title) {
+            const cleanAuthor = data.author_name
+              ? '@' + data.author_name.replace(/\s+/g, '')
+              : item.author;
+            oembedCache[item.videoId] = {
+              title: data.title,
+              author: cleanAuthor
+            };
+            item.title = data.title;
+            item.author = cleanAuthor;
+            if (feedQueue[currentIndex]?.uid === item.uid) {
+              updateOverlayMetadata(item);
             }
           }
         } catch (err) {
-          console.error('Failed to load queue:', err);
-        }
-
-        // Default to sample reels on first visit
-        queue = [...SAMPLE_REELS];
-      }
-
-      function saveBookmarks() {
-        try {
-          localStorage.setItem(STORAGE_BOOKMARKS_KEY, JSON.stringify(bookmarks));
-        } catch (err) {
-          showToast('Storage quota exceeded when saving bookmarks', 'error');
-        }
-        updateBookmarkUI();
-      }
-
-      function saveQueue() {
-        try {
-          localStorage.setItem(STORAGE_QUEUE_KEY, JSON.stringify(queue));
-        } catch (err) {
-          console.error('Failed to persist queue:', err);
+          // Silently keep curated/fallback title if offline or blocked
         }
       }
 
-      // ==========================================
-      // 6. YOUTUBE IFRAME API HOOK
-      // ==========================================
+      // =========================================================================
+      // 6. URL & PLAYLIST PARSER (YouTube Shorts, Playlists & Facebook Reels)
+      // =========================================================================
+      function parseInputLines(rawText) {
+        const tokens = rawText.split(/[\s,]+/).filter(Boolean);
+        const items = [];
+        let foundPlaylistId = null;
+
+        for (let token of tokens) {
+          if (!/^https?:\/\//i.test(token)) {
+            // Check if raw playlist ID (e.g., PLxxxx or UUxxxx)
+            if (/^(PL|UU|OLAK5uy_)[a-zA-Z0-9_-]{10,}$/.test(token)) {
+              foundPlaylistId = token;
+              continue;
+            }
+            token = 'https://' + token;
+          }
+
+          let urlObj;
+          try {
+            urlObj = new URL(token);
+          } catch (e) {
+            continue;
+          }
+
+          const host = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+
+          // YouTube URLs
+          if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+            const listParam = urlObj.searchParams.get('list');
+            if (listParam && (urlObj.pathname === '/playlist' || !urlObj.searchParams.get('v'))) {
+              foundPlaylistId = listParam;
+            }
+
+            let videoId = null;
+            if (host === 'youtu.be') {
+              videoId = urlObj.pathname.split('/').filter(Boolean)[0];
+            } else if (urlObj.pathname.startsWith('/shorts/')) {
+              videoId = urlObj.pathname.split('/shorts/')[1]?.split('/')[0];
+            } else if (urlObj.pathname.startsWith('/embed/')) {
+              videoId = urlObj.pathname.split('/embed/')[1]?.split('/')[0];
+            } else if (urlObj.searchParams.get('v')) {
+              videoId = urlObj.searchParams.get('v');
+            }
+
+            if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+              items.push({
+                uid: `yt_${videoId}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+                id: `yt_${videoId}`,
+                platform: 'youtube',
+                videoId: videoId,
+                originalUrl: `https://www.youtube.com/shorts/${videoId}`,
+                title: `YouTube Short (${videoId})`,
+                author: '@YouTubeCreator',
+                topic: 'custom'
+              });
+            }
+          }
+
+          // Facebook Reels URLs
+          if (
+            host === 'facebook.com' ||
+            host === 'm.facebook.com' ||
+            host === 'web.facebook.com' ||
+            host === 'fb.watch'
+          ) {
+            const cleanUrl = new URL(urlObj.href);
+            const vParam = cleanUrl.searchParams.get('v');
+            cleanUrl.search = '';
+            if (vParam) cleanUrl.searchParams.set('v', vParam);
+            const slug = (urlObj.pathname + (vParam || '')).replace(/[^a-zA-Z0-9]/g, '').slice(-16) || String(Date.now());
+
+            items.push({
+              uid: `fb_${slug}_${Date.now()}`,
+              id: `fb_${slug}`,
+              platform: 'facebook',
+              videoId: slug,
+              originalUrl: cleanUrl.toString(),
+              title: `Facebook Reel #${slug.slice(0, 8)}`,
+              author: '@FacebookReels',
+              topic: 'custom'
+            });
+          }
+        }
+
+        return { items, foundPlaylistId };
+      }
+
+      // =========================================================================
+      // 7. YOUTUBE IFRAME API & CONTINUOUS AUTOPLAY ENGINE
+      // =========================================================================
       window.onYouTubeIframeAPIReady = function () {
         ytApiReady = true;
-        if (queue.length > 0 && queue[currentIndex]?.platform === 'youtube') {
+        if (feedQueue.length > 0) {
           renderCurrentReel('none');
         }
       };
 
-      // ==========================================
-      // 7. PLAYER RENDERING ENGINE
-      // ==========================================
-      function destroyCurrentPlayer() {
+      function stopProgressTimer() {
+        if (progressTimer) {
+          clearInterval(progressTimer);
+          progressTimer = null;
+        }
+        scrubberFill.style.width = '0%';
+      }
+
+      function startProgressTimer() {
+        stopProgressTimer();
+        progressTimer = setInterval(() => {
+          if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
+            const dur = ytPlayer.getDuration();
+            const cur = ytPlayer.getCurrentTime();
+            if (dur > 0) {
+              const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+              scrubberFill.style.width = `${pct}%`;
+            }
+          }
+        }, 180);
+      }
+
+      function destroyPlayer() {
+        stopProgressTimer();
         if (ytPlayer && typeof ytPlayer.destroy === 'function') {
           try {
             ytPlayer.destroy();
-          } catch (e) {
-            // Ignore destroy errors if DOM already cleared
-          }
+          } catch (e) {}
         }
         ytPlayer = null;
-        playerMount.innerHTML = '';
+        videoMount.innerHTML = '';
       }
 
       function renderCurrentReel(direction = 'next') {
-        updateQueueMetaUI();
+        ensureInfiniteFeed();
+        if (feedQueue.length === 0) {
+          feedQueue = generateDiscoveryBatch(10);
+          currentIndex = 0;
+        }
 
-        if (queue.length === 0) {
-          destroyCurrentPlayer();
-          emptyQueueState.classList.remove('hidden');
+        if (currentIndex < 0) currentIndex = 0;
+        if (currentIndex >= feedQueue.length) currentIndex = feedQueue.length - 1;
+
+        const item = feedQueue[currentIndex];
+        updateOverlayMetadata(item);
+        updateCounters();
+
+        // Smooth vertical slide transition
+        shortsCard.classList.remove('anim-next', 'anim-prev');
+        void shortsCard.offsetWidth;
+        if (direction === 'next') shortsCard.classList.add('anim-next');
+        if (direction === 'prev') shortsCard.classList.add('anim-prev');
+
+        destroyPlayer();
+
+        // Handle YouTube Playlist Mode if user loaded a playlist
+        if (item.platform === 'youtube_playlist') {
+          const targetDiv = document.createElement('div');
+          targetDiv.id = 'yt-shorts-player';
+          targetDiv.className = 'w-full h-full';
+          videoMount.appendChild(targetDiv);
+
+          if (ytApiReady && window.YT && window.YT.Player) {
+            ytPlayer = new YT.Player('yt-shorts-player', {
+              width: '100%',
+              height: '100%',
+              playerVars: {
+                listType: 'playlist',
+                list: item.playlistId,
+                autoplay: 1,
+                mute: isMuted ? 1 : 0,
+                controls: 0,
+                rel: 0,
+                modestbranding: 1,
+                playsinline: 1
+              },
+              events: {
+                onReady: (e) => {
+                  e.target.setVolume(volumeLevel);
+                  if (isMuted) e.target.mute();
+                  else e.target.unMute();
+                  e.target.playVideo();
+                  startProgressTimer();
+                },
+                onStateChange: handleYTStateChange
+              }
+            });
+          }
+          reclaimFocus();
           return;
         }
 
-        emptyQueueState.classList.add('hidden');
-
-        // Clamp index
-        if (currentIndex < 0) currentIndex = queue.length - 1;
-        if (currentIndex >= queue.length) currentIndex = 0;
-
-        const item = queue[currentIndex];
-        isPaused = false;
-
-        // Trigger smooth slide animation on wrapper
-        playerFrameWrapper.classList.remove('anim-next', 'anim-prev');
-        void playerFrameWrapper.offsetWidth; // force reflow
-        if (direction === 'next') playerFrameWrapper.classList.add('anim-next');
-        if (direction === 'prev') playerFrameWrapper.classList.add('anim-prev');
-
-        destroyCurrentPlayer();
-
+        // Standard YouTube Short
         if (item.platform === 'youtube') {
-          fbHelperNote.classList.add('hidden');
+          enrichMetadataViaOEmbed(item);
+
           const targetDiv = document.createElement('div');
-          targetDiv.id = 'yt-player-target';
+          targetDiv.id = 'yt-shorts-player';
           targetDiv.className = 'w-full h-full';
-          playerMount.appendChild(targetDiv);
+          videoMount.appendChild(targetDiv);
 
           if (ytApiReady && window.YT && window.YT.Player) {
-            ytPlayer = new YT.Player('yt-player-target', {
+            ytPlayer = new YT.Player('yt-shorts-player', {
               videoId: item.videoId,
               width: '100%',
               height: '100%',
               playerVars: {
                 autoplay: 1,
-                loop: 1,
-                playlist: item.videoId,
-                controls: 1,
+                mute: isMuted ? 1 : 0,
+                controls: 0,
+                disablekb: 1,
+                fs: 0,
                 rel: 0,
                 modestbranding: 1,
                 playsinline: 1,
-                mute: isMuted ? 1 : 0,
+                loop: autoAdvanceEnabled ? 0 : 1,
+                playlist: item.videoId,
                 origin: window.location.origin
               },
               events: {
-                onReady: function (event) {
+                onReady: (event) => {
+                  event.target.setVolume(volumeLevel);
                   if (isMuted) {
                     event.target.mute();
                   } else {
                     event.target.unMute();
                   }
                   event.target.playVideo();
-
-                  // Try fetching official title from player metadata if generic
-                  try {
-                    const data = event.target.getVideoData();
-                    if (data && data.title && item.title.startsWith('YouTube Short (')) {
-                      item.title = data.title;
-                      saveQueue();
-                      updateQueueMetaUI();
-                    }
-                  } catch (e) {}
+                  updatePlayPauseIcon(true);
+                  startProgressTimer();
                 },
-                onStateChange: function (event) {
-                  if (event.data === YT.PlayerState.PAUSED) {
-                    isPaused = true;
-                  } else if (event.data === YT.PlayerState.PLAYING) {
-                    isPaused = false;
-                  }
+                onStateChange: handleYTStateChange,
+                onError: () => {
+                  // Auto-skip restricted/unavailable video seamlessly so feed never stalls
+                  showToast('Skipping restricted video...');
+                  setTimeout(() => nextShort(), 400);
                 }
               }
             });
           } else {
-            // Fallback raw iframe if YT API script is still loading
+            // Immediate fallback iframe before YT script finishes loading
             const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${item.videoId}?enablejsapi=1&autoplay=1&loop=1&playlist=${item.videoId}&controls=1&rel=0&modestbranding=1&mute=${isMuted ? 1 : 0}`;
+            iframe.src = `https://www.youtube.com/embed/${item.videoId}?enablejsapi=1&autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1`;
             iframe.className = 'w-full h-full border-0';
-            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
             iframe.allowFullscreen = true;
-            playerMount.appendChild(iframe);
+            videoMount.appendChild(iframe);
           }
         } else if (item.platform === 'facebook') {
-          fbHelperNote.classList.remove('hidden');
-
+          // Public Facebook Reel Embed
           const iframe = document.createElement('iframe');
-          const encodedHref = encodeURIComponent(item.originalUrl);
-          iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodedHref}&show_text=false&autoplay=true&mute=${isMuted ? 1 : 0}`;
+          const encodedUrl = encodeURIComponent(item.originalUrl);
+          iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=false&autoplay=true&mute=${isMuted ? 1 : 0}`;
           iframe.className = 'w-full h-full border-0 bg-black';
           iframe.allow = 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share';
           iframe.allowFullscreen = true;
           iframe.scrolling = 'no';
-          playerMount.appendChild(iframe);
+          videoMount.appendChild(iframe);
+          updatePlayPauseIcon(true);
         }
 
-        // Reclaim focus back to body so keyboard shortcuts work immediately
         reclaimFocus();
       }
 
-      // ==========================================
-      // 8. PLAYBACK & NAVIGATION CONTROLS
-      // ==========================================
-      function nextReel() {
-        if (queue.length === 0) return;
-        currentIndex = (currentIndex + 1) % queue.length;
+      function handleYTStateChange(event) {
+        if (!window.YT) return;
+        if (event.data === YT.PlayerState.PLAYING) {
+          updatePlayPauseIcon(true);
+        } else if (event.data === YT.PlayerState.PAUSED) {
+          updatePlayPauseIcon(false);
+        } else if (event.data === YT.PlayerState.ENDED) {
+          // Seamless continuous auto-advance or loop!
+          if (autoAdvanceEnabled) {
+            nextShort();
+          } else if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+            ytPlayer.seekTo(0);
+            ytPlayer.playVideo();
+          }
+        }
+      }
+
+      // =========================================================================
+      // 8. PLAYBACK, NAVIGATION & ACTION CONTROLS
+      // =========================================================================
+      function nextShort() {
+        currentIndex++;
+        ensureInfiniteFeed();
         renderCurrentReel('next');
       }
 
-      function prevReel() {
-        if (queue.length === 0) return;
-        currentIndex = (currentIndex - 1 + queue.length) % queue.length;
-        renderCurrentReel('prev');
+      function prevShort() {
+        if (currentIndex > 0) {
+          currentIndex--;
+          renderCurrentReel('prev');
+        } else {
+          showToast('At the start of your session feed');
+        }
       }
 
       function togglePlayPause() {
-        if (queue.length === 0) return;
-        const current = queue[currentIndex];
+        const item = feedQueue[currentIndex];
+        if (!item) return;
 
-        if (current.platform === 'youtube' && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+        if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
           const state = ytPlayer.getPlayerState();
           if (state === YT.PlayerState.PLAYING) {
             ytPlayer.pauseVideo();
-            isPaused = true;
-            triggerCenterFeedback('pause', 'Paused');
+            updatePlayPauseIcon(false);
+            triggerCenterFeedback('pause');
           } else {
             ytPlayer.playVideo();
-            isPaused = false;
-            triggerCenterFeedback('play', 'Playing');
+            updatePlayPauseIcon(true);
+            triggerCenterFeedback('play');
           }
-        } else if (current.platform === 'facebook') {
-          showToast('Click inside Facebook player to toggle Play/Pause');
+        } else if (item.platform === 'facebook') {
+          showToast('Click inside Facebook Reel to Play/Pause');
+        }
+      }
+
+      function setMutedState(muteBool) {
+        isMuted = muteBool;
+        if (!isMuted) {
+          hasUserUnmutedOnce = true;
+          unmutePromptBanner.classList.add('hidden');
+        }
+        updateMuteIcon();
+
+        if (ytPlayer && typeof ytPlayer.mute === 'function') {
+          if (isMuted) {
+            ytPlayer.mute();
+          } else {
+            ytPlayer.unMute();
+            ytPlayer.setVolume(volumeLevel);
+          }
         }
       }
 
       function toggleMute() {
-        isMuted = !isMuted;
-        updateMuteIconUI();
-
-        if (queue.length > 0) {
-          const current = queue[currentIndex];
-          if (current.platform === 'youtube' && ytPlayer && typeof ytPlayer.mute === 'function') {
-            if (isMuted) {
-              ytPlayer.mute();
-            } else {
-              ytPlayer.unMute();
-            }
-          }
-        }
-
-        triggerCenterFeedback(isMuted ? 'mute' : 'unmute', isMuted ? 'Muted' : 'Unmuted');
+        setMutedState(!isMuted);
+        triggerCenterFeedback(isMuted ? 'mute' : 'unmute');
       }
 
-      function toggleZenMode(forceState) {
-        isZenMode = typeof forceState === 'boolean' ? forceState : !isZenMode;
+      function toggleAutoAdvance() {
+        autoAdvanceEnabled = !autoAdvanceEnabled;
+        updateAutoAdvanceUI();
+        showToast(autoAdvanceEnabled ? 'Auto-Next ON — continuous feed' : 'Loop Current Short ON');
+      }
 
-        if (isZenMode) {
-          topBar.classList.add('-translate-y-full', 'opacity-0', 'pointer-events-none');
-          bottomKeyBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
-          leftInfoPanel.classList.add('opacity-0', 'pointer-events-none');
-          exitZenBtn.classList.remove('hidden');
-          playerFrameWrapper.style.height = 'min(92vh, 880px)';
+      function toggleLikeCurrent() {
+        const item = feedQueue[currentIndex];
+        if (!item) return;
+        if (likedIds.has(item.id)) {
+          likedIds.delete(item.id);
         } else {
-          topBar.classList.remove('-translate-y-full', 'opacity-0', 'pointer-events-none');
-          bottomKeyBar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-          leftInfoPanel.classList.remove('opacity-0', 'pointer-events-none');
-          exitZenBtn.classList.add('hidden');
-          playerFrameWrapper.style.height = 'min(82vh, 760px)';
+          likedIds.add(item.id);
+          triggerCenterFeedback('like');
         }
-      }
-
-      function removeCurrentFromQueue() {
-        if (queue.length === 0) return;
-        const removed = queue.splice(currentIndex, 1)[0];
-        saveQueue();
-        if (currentIndex >= queue.length) {
-          currentIndex = Math.max(0, queue.length - 1);
-        }
-        showToast(`Removed "${removed.title}" from queue`);
-        renderCurrentReel('next');
-      }
-
-      // ==========================================
-      // 9. BOOKMARKING SYSTEM
-      // ==========================================
-      function isCurrentBookmarked() {
-        if (queue.length === 0) return false;
-        const current = queue[currentIndex];
-        return bookmarks.some((b) => b.id === current.id || b.originalUrl === current.originalUrl);
+        try {
+          localStorage.setItem(STORAGE_LIKED, JSON.stringify([...likedIds]));
+        } catch (e) {}
+        updateActionButtonsState();
       }
 
       function toggleBookmarkCurrent() {
-        if (queue.length === 0) return;
-        const current = queue[currentIndex];
-        const existingIndex = bookmarks.findIndex(
-          (b) => b.id === current.id || b.originalUrl === current.originalUrl
-        );
+        const item = feedQueue[currentIndex];
+        if (!item) return;
+        const idx = bookmarks.findIndex((b) => b.id === item.id || b.originalUrl === item.originalUrl);
 
-        if (existingIndex !== -1) {
-          bookmarks.splice(existingIndex, 1);
+        if (idx !== -1) {
+          bookmarks.splice(idx, 1);
           saveBookmarks();
-          updateBookmarkButtonState();
-          triggerCenterFeedback('bookmark-off', 'Removed Bookmark');
           showToast('Removed from Saved Reels');
         } else {
           bookmarks.unshift({
-            ...current,
-            isSample: false,
+            ...item,
+            note: '',
             savedAt: Date.now()
           });
           saveBookmarks();
-          updateBookmarkButtonState();
-          triggerCenterFeedback('bookmark-on', 'Bookmarked');
+          triggerCenterFeedback('bookmark');
           showToast('Saved to Bookmarks');
         }
+        updateActionButtonsState();
       }
 
-      function updateBookmarkButtonState() {
-        const saved = isCurrentBookmarked();
-        if (saved) {
-          bookmarkBtn.classList.add('border-amber-400/50', 'bg-amber-400/15', 'text-amber-300');
-          bookmarkIcon.setAttribute('fill', 'currentColor');
+      function toggleZenMode(force) {
+        isZenMode = typeof force === 'boolean' ? force : !isZenMode;
+        if (isZenMode) {
+          leftRail.classList.add('hidden');
+          leftRail.classList.remove('sm:flex');
+          farRightNavArrows.classList.add('hidden');
+          farRightNavArrows.classList.remove('md:flex');
+          exitZenPill.classList.remove('hidden');
         } else {
-          bookmarkBtn.classList.remove('border-amber-400/50', 'bg-amber-400/15', 'text-amber-300');
-          bookmarkIcon.setAttribute('fill', 'none');
+          leftRail.classList.remove('hidden');
+          leftRail.classList.add('sm:flex');
+          farRightNavArrows.classList.remove('hidden');
+          farRightNavArrows.classList.add('md:flex');
+          exitZenPill.classList.add('hidden');
         }
       }
 
-      function updateBookmarkUI() {
-        bookmarkBadge.textContent = bookmarks.length;
-        savedCountSubtitle.textContent = `${bookmarks.length} bookmarked video${bookmarks.length === 1 ? '' : 's'}`;
-        renderBookmarksList();
-        updateBookmarkButtonState();
+      // =========================================================================
+      // 9. UI & METADATA SYNC
+      // =========================================================================
+      function updateOverlayMetadata(item) {
+        if (!item) return;
+        const cleanAuthor = item.author || (item.platform === 'facebook' ? '@FacebookReels' : '@YouTubeShorts');
+        channelHandle.textContent = cleanAuthor;
+        channelAvatar.textContent = cleanAuthor.replace('@', '').slice(0, 2).toUpperCase() || 'YT';
+        videoCaption.textContent = item.title;
+
+        const trackLabel = `Original Sound — ${cleanAuthor}`;
+        audioTrackText.textContent = trackLabel;
+        audioTrackTextClone.textContent = trackLabel;
+
+        platformChip.textContent = item.platform === 'facebook' ? 'FB Reel' : 'Shorts';
+        platformChip.className =
+          item.platform === 'facebook'
+            ? 'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/25 text-blue-300'
+            : 'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/15 text-zinc-200';
+
+        openSourceActionBtn.href = item.originalUrl;
+        feedCounterChip.textContent = `#${currentIndex + 1}`;
+        updateActionButtonsState();
       }
 
-      function renderBookmarksList() {
-        const filtered = bookmarks.filter((item) => {
-          if (activeFilter === 'all') return true;
-          return item.platform === activeFilter;
-        });
+      function updateActionButtonsState() {
+        const item = feedQueue[currentIndex];
+        if (!item) return;
 
-        if (filtered.length === 0) {
-          bookmarksList.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div class="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center text-zinc-500 mb-3">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              </div>
-              <p class="text-sm font-medium text-zinc-300">No saved reels here</p>
-              <p class="text-xs text-zinc-500 mt-1">Press <span class="kbd">B</span> while watching any reel to save it for later.</p>
-            </div>
-          `;
-          return;
-        }
+        // Like state
+        const isLiked = likedIds.has(item.id);
+        likeActionBtn.className = isLiked
+          ? 'w-12 h-12 rounded-full bg-white text-black active:scale-95 flex items-center justify-center transition-all shadow-lg'
+          : 'w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all';
+        likeActionLabel.textContent = isLiked ? 'Liked' : 'Like';
 
-        bookmarksList.innerHTML = filtered
-          .map((item) => {
-            const isYT = item.platform === 'youtube';
-            const badgeHtml = isYT
-              ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/25">YT</span>`
-              : `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/25">FB</span>`;
-            const dateStr = new Date(item.savedAt || Date.now()).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric'
-            });
-
-            return `
-              <div class="group p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] transition-all">
-                <div class="flex items-start justify-between gap-2.5">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2 mb-1">
-                      ${badgeHtml}
-                      <span class="text-[11px] text-zinc-500">${dateStr}</span>
-                    </div>
-                    <h4 class="text-xs font-semibold text-zinc-100 truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h4>
-                    ${
-                      item.note
-                        ? `<p class="text-[11px] text-amber-300/80 mt-1 truncate">Note: ${escapeHtml(item.note)}</p>`
-                        : ''
-                    }
-                  </div>
-
-                  <div class="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      data-action="play"
-                      data-id="${escapeHtml(item.id)}"
-                      title="Play Now"
-                      class="p-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white transition-all"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                        <polygon points="6 4 20 12 6 20 6 4" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      data-action="edit"
-                      data-id="${escapeHtml(item.id)}"
-                      title="Rename / Add Note"
-                      class="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.12] text-zinc-400 hover:text-white transition-all"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      data-action="delete"
-                      data-id="${escapeHtml(item.id)}"
-                      title="Remove Bookmark"
-                      class="p-2 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 transition-all"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `;
-          })
-          .join('');
-      }
-
-      // ==========================================
-      // 10. UI & METADATA UPDATES
-      // ==========================================
-      function updateQueueMetaUI() {
-        const hasSamples = queue.some((item) => item.isSample);
-        if (hasSamples) {
-          clearSamplesBtn.classList.remove('hidden');
-          clearSamplesBtn.classList.add('sm:flex');
+        // Bookmark / Save state
+        const isSaved = bookmarks.some((b) => b.id === item.id || b.originalUrl === item.originalUrl);
+        if (isSaved) {
+          bookmarkActionBtn.className =
+            'w-12 h-12 rounded-full bg-[#FF0033] text-white active:scale-95 flex items-center justify-center transition-all shadow-[0_0_20px_rgba(255,0,51,0.45)]';
+          bookmarkActionIcon.setAttribute('fill', 'currentColor');
+          bookmarkActionLabel.textContent = 'Saved';
+          subscribePillBtn.textContent = 'Saved';
+          subscribePillBtn.className =
+            'ml-1 px-3 py-1.5 rounded-full bg-[#242424] text-white text-xs font-bold transition-colors shrink-0';
         } else {
-          clearSamplesBtn.classList.add('hidden');
-          clearSamplesBtn.classList.remove('sm:flex');
+          bookmarkActionBtn.className =
+            'w-12 h-12 rounded-full bg-[#141414] hover:bg-[#242424] active:scale-95 flex items-center justify-center text-white transition-all';
+          bookmarkActionIcon.setAttribute('fill', 'none');
+          bookmarkActionLabel.textContent = 'Save';
+          subscribePillBtn.textContent = 'Save';
+          subscribePillBtn.className =
+            'ml-1 px-3 py-1.5 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-colors shrink-0';
         }
-
-        if (queue.length === 0) {
-          queueCounter.textContent = '0 / 0';
-          mobileQueueCounter.textContent = '0 / 0';
-          reelTitle.textContent = 'No reels in queue';
-          metaBadges.innerHTML = '';
-          mobileMetaPill.innerHTML = '<span>Empty Queue</span>';
-          openOriginalBtn.href = '#';
-          miniQueueList.innerHTML = '';
-          updateBookmarkButtonState();
-          return;
-        }
-
-        const current = queue[currentIndex];
-        const counterText = `${currentIndex + 1} / ${queue.length}`;
-        queueCounter.textContent = counterText;
-        mobileQueueCounter.textContent = counterText;
-
-        reelTitle.textContent = current.title;
-        openOriginalBtn.href = current.originalUrl;
-
-        if (current.note) {
-          reelNoteDisplay.textContent = `"${current.note}"`;
-          reelNoteDisplay.classList.remove('hidden');
-        } else {
-          reelNoteDisplay.classList.add('hidden');
-        }
-
-        const isYT = current.platform === 'youtube';
-        const platformBadge = isYT
-          ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/25">YouTube Short</span>`
-          : `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/25">Facebook Reel</span>`;
-
-        const sampleBadge = current.isSample
-          ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25">Sample</span>`
-          : '';
-
-        metaBadges.innerHTML = platformBadge + sampleBadge;
-        mobileMetaPill.innerHTML = `
-          <span class="w-2 h-2 rounded-full ${isYT ? 'bg-rose-400' : 'bg-blue-400'} shrink-0"></span>
-          <span class="truncate">${escapeHtml(current.title)}</span>
-          ${current.isSample ? '<span class="text-amber-300 text-[10px] shrink-0">(Sample)</span>' : ''}
-        `;
-
-        // Render Mini Queue List on Desktop Left Panel
-        miniQueueList.innerHTML = queue
-          .map((item, idx) => {
-            const active = idx === currentIndex;
-            return `
-              <button
-                type="button"
-                data-queue-idx="${idx}"
-                class="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center gap-2 transition-all ${
-                  active
-                    ? 'bg-indigo-600/20 border border-indigo-500/40 text-white font-medium'
-                    : 'hover:bg-white/[0.05] text-zinc-400 hover:text-zinc-200 border border-transparent'
-                }"
-              >
-                <span class="font-mono text-[10px] ${active ? 'text-indigo-300' : 'text-zinc-600'}">${idx + 1}</span>
-                <span class="w-1.5 h-1.5 rounded-full ${item.platform === 'youtube' ? 'bg-rose-400' : 'bg-blue-400'} shrink-0"></span>
-                <span class="truncate flex-1">${escapeHtml(item.title)}</span>
-              </button>
-            `;
-          })
-          .join('');
-
-        updateBookmarkButtonState();
       }
 
-      function updateMuteIconUI() {
+      function updatePlayPauseIcon(isPlaying) {
+        if (isPlaying) {
+          hudPlayPauseIcon.innerHTML = `<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>`;
+        } else {
+          hudPlayPauseIcon.innerHTML = `<polygon points="6 4 20 12 6 20 6 4"/>`;
+        }
+      }
+
+      function updateMuteIcon() {
         if (isMuted) {
-          muteBtn.classList.add('border-rose-400/40', 'bg-rose-500/15', 'text-rose-300');
-          muteIcon.innerHTML = `
+          hudMuteIcon.innerHTML = `
             <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
           `;
         } else {
-          muteBtn.classList.remove('border-rose-400/40', 'bg-rose-500/15', 'text-rose-300');
-          muteIcon.innerHTML = `
+          hudMuteIcon.innerHTML = `
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
           `;
         }
       }
 
-      function triggerCenterFeedback(type, label) {
+      function updateAutoAdvanceUI() {
+        if (autoAdvanceEnabled) {
+          autoAdvanceDot.className = 'w-1.5 h-1.5 rounded-full bg-[#FF0033]';
+          autoAdvanceLabel.textContent = 'Auto-Next: ON';
+          loopModeActionBtn.classList.add('text-[#FF0033]');
+          loopModeActionBtn.classList.remove('text-white');
+          loopModeLabel.textContent = 'Auto';
+          loopModeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />`;
+        } else {
+          autoAdvanceDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+          autoAdvanceLabel.textContent = 'Loop: ON';
+          loopModeActionBtn.classList.remove('text-[#FF0033]');
+          loopModeActionBtn.classList.add('text-white');
+          loopModeLabel.textContent = 'Loop';
+          loopModeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />`;
+        }
+      }
+
+      function updateCounters() {
+        const savedCount = bookmarks.length;
+        document.getElementById('railSavedCount').textContent = savedCount;
+        document.getElementById('mobileSavedCount').textContent = savedCount;
+        document.getElementById('drawerSavedTabCount').textContent = savedCount;
+        document.getElementById('drawerQueueTabCount').textContent = feedQueue.length;
+      }
+
+      function triggerCenterFeedback(type) {
         const icons = {
-          play: `<svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" /></svg>`,
-          pause: `<svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`,
-          mute: `<svg class="w-7 h-7 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`,
-          unmute: `<svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`,
-          'bookmark-on': `<svg class="w-7 h-7 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M5 4a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V4z" /></svg>`,
-          'bookmark-off': `<svg class="w-7 h-7 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>`
+          play: `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>`,
+          pause: `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`,
+          mute: `<svg class="w-7 h-7 text-[#FF0033]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>`,
+          unmute: `<svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>`,
+          like: `<svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>`,
+          bookmark: `<svg class="w-7 h-7 text-[#FF0033]" fill="currentColor" viewBox="0 0 24 24"><path d="M5 4a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V4z"/></svg>`
         };
-
         centerFeedbackIcon.innerHTML = icons[type] || '';
-        centerFeedbackText.textContent = label;
-
         centerFeedback.classList.remove('hidden', 'center-feedback-active');
         void centerFeedback.offsetWidth;
         centerFeedback.classList.add('center-feedback-active');
       }
 
-      function showToast(message, type = 'info') {
+      function showToast(msg) {
         const toast = document.createElement('div');
-        const accentClass =
-          type === 'error'
-            ? 'border-rose-500/40 bg-rose-950/90 text-rose-200'
-            : 'border-white/15 bg-zinc-900/90 text-zinc-100';
-
-        toast.className = `px-4 py-2 rounded-xl border ${accentClass} backdrop-blur-md text-xs font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-2`;
-        toast.textContent = message;
-
+        toast.className =
+          'px-4 py-2 rounded-full bg-[#181818] border border-[#2c2c2c] text-xs font-medium text-white shadow-2xl transition-all duration-300 opacity-0 translate-y-2';
+        toast.textContent = msg;
         const container = document.getElementById('toastContainer');
         container.appendChild(toast);
-
-        requestAnimationFrame(() => {
-          toast.classList.remove('opacity-0', 'translate-y-2');
-        });
-
+        requestAnimationFrame(() => toast.classList.remove('opacity-0', 'translate-y-2'));
         setTimeout(() => {
           toast.classList.add('opacity-0', 'translate-y-2');
           setTimeout(() => toast.remove(), 300);
-        }, 2400);
+        }, 2200);
       }
 
       function escapeHtml(str) {
@@ -1377,58 +1570,177 @@
           .replace(/"/g, '&quot;');
       }
 
-      // ==========================================
-      // 11. FOCUS MANAGEMENT & KEYBOARD ENGINE
-      // ==========================================
+      // =========================================================================
+      // 10. BOOKMARKS & QUEUE DRAWER RENDERING
+      // =========================================================================
+      function saveBookmarks() {
+        try {
+          localStorage.setItem(STORAGE_BOOKMARKS, JSON.stringify(bookmarks));
+        } catch (e) {
+          showToast('Storage full — export JSON to back up');
+        }
+        updateCounters();
+        renderBookmarksList();
+      }
+
+      function renderBookmarksList() {
+        const q = savedSearchQuery.toLowerCase();
+        const filtered = bookmarks.filter((b) => {
+          if (savedFilter !== 'all' && b.platform !== savedFilter) return false;
+          if (q && !b.title.toLowerCase().includes(q) && !(b.note || '').toLowerCase().includes(q)) {
+            return false;
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          bookmarksContainer.innerHTML = `
+            <div class="py-12 text-center px-4">
+              <p class="text-sm font-medium text-zinc-300">No saved reels found</p>
+              <p class="text-xs text-zinc-500 mt-1">Press <kbd class="kbd">B</kbd> while watching any Short to bookmark it.</p>
+            </div>
+          `;
+          return;
+        }
+
+        bookmarksContainer.innerHTML = filtered
+          .map((item) => {
+            const isYT = item.platform === 'youtube';
+            return `
+              <div class="p-3 rounded-xl bg-[#141414] hover:bg-[#1b1b1b] border border-[#222222] transition-colors">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5 mb-1">
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                        isYT ? 'bg-[#FF0033]/20 text-[#FF0033]' : 'bg-blue-500/20 text-blue-400'
+                      }">${isYT ? 'Shorts' : 'FB Reel'}</span>
+                      <span class="text-[11px] text-zinc-500 truncate">${escapeHtml(item.author || '')}</span>
+                    </div>
+                    <h4 class="text-xs font-semibold text-white truncate">${escapeHtml(item.title)}</h4>
+                    ${item.note ? `<p class="text-[11px] text-zinc-400 mt-1 truncate">Note: ${escapeHtml(item.note)}</p>` : ''}
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" data-bm-action="play" data-id="${escapeHtml(item.id)}" title="Play Now" class="p-2 rounded-full bg-white text-black hover:bg-zinc-200 transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                    </button>
+                    <button type="button" data-bm-action="delete" data-id="${escapeHtml(item.id)}" title="Remove" class="p-2 rounded-full bg-[#222222] hover:bg-[#FF0033]/20 text-zinc-400 hover:text-[#FF0033] transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      function renderQueueList() {
+        queueListContainer.innerHTML = feedQueue
+          .map((item, idx) => {
+            const isCurrent = idx === currentIndex;
+            return `
+              <button
+                type="button"
+                data-queue-index="${idx}"
+                class="w-full text-left p-2.5 rounded-xl flex items-center gap-2.5 transition-colors ${
+                  isCurrent
+                    ? 'bg-[#1c1c1c] border border-[#FF0033]/50 text-white'
+                    : 'bg-[#111111] hover:bg-[#181818] text-zinc-400 hover:text-white border border-transparent'
+                }"
+              >
+                <span class="font-mono text-[10px] w-5 text-center ${isCurrent ? 'text-[#FF0033] font-bold' : 'text-zinc-600'}">${idx + 1}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium truncate">${escapeHtml(item.title)}</p>
+                  <p class="text-[10px] text-zinc-500 truncate">${escapeHtml(item.author || item.platform)}</p>
+                </div>
+              </button>
+            `;
+          })
+          .join('');
+      }
+
+      function openDrawer(tab = 'saved') {
+        drawerOverlay.classList.remove('hidden');
+        switchDrawerTab(tab);
+        reclaimFocus();
+      }
+
+      function switchDrawerTab(tab) {
+        const tabSaved = document.getElementById('drawerTabSaved');
+        const tabQueue = document.getElementById('drawerTabQueue');
+        if (tab === 'saved') {
+          tabSaved.className = 'px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all';
+          tabQueue.className = 'px-3.5 py-1.5 rounded-full text-zinc-400 hover:text-white text-xs font-medium transition-all';
+          savedDrawerView.classList.remove('hidden');
+          queueDrawerView.classList.add('hidden');
+          renderBookmarksList();
+        } else {
+          tabQueue.className = 'px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all';
+          tabSaved.className = 'px-3.5 py-1.5 rounded-full text-zinc-400 hover:text-white text-xs font-medium transition-all';
+          queueDrawerView.classList.remove('hidden');
+          savedDrawerView.classList.add('hidden');
+          renderQueueList();
+        }
+      }
+
+      // =========================================================================
+      // 11. FOCUS MANAGEMENT, SCROLL WHEEL & KEYBOARD SHORTCUTS
+      // =========================================================================
       function reclaimFocus() {
         if (document.activeElement && document.activeElement !== document.body) {
           document.activeElement.blur();
         }
         window.focus();
-        focusTrapBanner.classList.add('hidden');
+        focusTrapPill.classList.add('hidden');
       }
 
-      function startFocusMonitor() {
-        // Detect if user clicked inside an iframe (document.activeElement becomes IFRAME)
-        focusMonitorInterval = setInterval(() => {
-          if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
-            focusTrapBanner.classList.remove('hidden');
-          } else {
-            focusTrapBanner.classList.add('hidden');
+      setInterval(() => {
+        if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+          focusTrapPill.classList.remove('hidden');
+        } else {
+          focusTrapPill.classList.add('hidden');
+        }
+      }, 450);
+
+      // Native-style vertical wheel / trackpad flip with debounce
+      let wheelLocked = false;
+      document.getElementById('theaterStage').addEventListener(
+        'wheel',
+        (e) => {
+          if (wheelLocked) return;
+          if (Math.abs(e.deltaY) > 32) {
+            wheelLocked = true;
+            if (e.deltaY > 0) nextShort();
+            else prevShort();
+            setTimeout(() => {
+              wheelLocked = false;
+            }, 340);
           }
-        }, 450);
-      }
+        },
+        { passive: true }
+      );
 
       window.addEventListener('keydown', (e) => {
-        // Ignore shortcuts when user is typing in any input or textarea
-        const activeTag = document.activeElement?.tagName;
-        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
-          if (e.key === 'Escape') {
-            reclaimFocus();
-          }
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+          if (e.key === 'Escape') reclaimFocus();
           return;
         }
 
-        // Escape closes overlays or reclaims focus
         if (e.key === 'Escape') {
-          if (!shortcutsModal.classList.contains('hidden')) {
-            shortcutsModal.classList.add('hidden');
-            return;
-          }
-          if (!bookmarksOverlay.classList.contains('hidden')) {
-            bookmarksOverlay.classList.add('hidden');
-            return;
-          }
-          if (isZenMode) {
-            toggleZenMode(false);
-            return;
-          }
+          addFeedModal.classList.add('hidden');
+          drawerOverlay.classList.add('hidden');
+          shortcutsModal.classList.add('hidden');
+          if (isZenMode) toggleZenMode(false);
           reclaimFocus();
           return;
         }
 
-        // Do not trigger player shortcuts when modal/drawer is open
-        if (!shortcutsModal.classList.contains('hidden') || !bookmarksOverlay.classList.contains('hidden')) {
+        if (
+          !addFeedModal.classList.contains('hidden') ||
+          !drawerOverlay.classList.contains('hidden') ||
+          !shortcutsModal.classList.contains('hidden')
+        ) {
           return;
         }
 
@@ -1437,27 +1749,23 @@
           case 'j':
           case 'J':
             e.preventDefault();
-            nextReel();
+            nextShort();
             break;
-
           case 'ArrowUp':
           case 'k':
           case 'K':
             e.preventDefault();
-            prevReel();
+            prevShort();
             break;
-
           case ' ':
             e.preventDefault();
             togglePlayPause();
             break;
-
           case 'm':
           case 'M':
             e.preventDefault();
             toggleMute();
             break;
-
           case 'b':
           case 'B':
           case 's':
@@ -1465,283 +1773,319 @@
             e.preventDefault();
             toggleBookmarkCurrent();
             break;
-
+          case 'l':
+          case 'L':
+            e.preventDefault();
+            toggleLikeCurrent();
+            break;
+          case 'r':
+          case 'R':
+            e.preventDefault();
+            toggleAutoAdvance();
+            break;
+          case 'a':
+          case 'A':
+            e.preventDefault();
+            addFeedModal.classList.remove('hidden');
+            bulkUrlTextarea.focus();
+            break;
           case 'f':
           case 'F':
             e.preventDefault();
             toggleZenMode();
             break;
-
           case '?':
             e.preventDefault();
             shortcutsModal.classList.toggle('hidden');
             break;
-
-          case 'Delete':
-          case 'Backspace':
-            e.preventDefault();
-            removeCurrentFromQueue();
-            break;
         }
       });
 
-      // ==========================================
-      // 12. EVENT LISTENERS
-      // ==========================================
-      // Add URLs (Single or Bulk)
-      quickAddForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const raw = urlInput.value.trim();
-        if (!raw) return;
-
-        const parsedItems = parseBulkInput(raw);
-        if (parsedItems.length === 0) {
-          showToast('Unrecognized link. Paste a valid YouTube Shorts or Facebook Reel URL.', 'error');
-          return;
-        }
-
-        // Insert newly added items right after current item (or at index 0 if empty)
-        const insertIndex = queue.length === 0 ? 0 : currentIndex + 1;
-        queue.splice(insertIndex, 0, ...parsedItems);
-        currentIndex = insertIndex;
-
-        saveQueue();
-        urlInput.value = '';
-        reclaimFocus();
-
-        showToast(
-          parsedItems.length === 1
-            ? `Added ${parsedItems[0].platform === 'youtube' ? 'YouTube Short' : 'Facebook Reel'}`
-            : `Added ${parsedItems.length} reels to queue`
-        );
-        renderCurrentReel('next');
-      });
-
-      // Clipboard Paste Helper
-      pasteBtn.addEventListener('click', async () => {
-        try {
-          if (navigator.clipboard && navigator.clipboard.readText) {
-            const clipText = await navigator.clipboard.readText();
-            if (clipText) {
-              urlInput.value = clipText;
-              quickAddForm.dispatchEvent(new Event('submit'));
-              return;
-            }
-          }
-        } catch (err) {
-          // Fallback focus input if browser blocks clipboard read
-        }
-        urlInput.focus();
-        showToast('Press Ctrl+V / Cmd+V to paste your link');
-      });
-
-      // Clear Sample Reels
-      clearSamplesBtn.addEventListener('click', () => {
-        queue = queue.filter((item) => !item.isSample);
-        currentIndex = 0;
-        saveQueue();
-        reclaimFocus();
-        showToast('Sample reels cleared');
-        renderCurrentReel('none');
-      });
-
-      // Reset Queue Button
-      document.getElementById('clearQueueBtn').addEventListener('click', () => {
-        queue = [];
-        currentIndex = 0;
-        saveQueue();
-        reclaimFocus();
-        renderCurrentReel('none');
-      });
-
-      // Empty State Action Buttons
-      document.getElementById('restoreSamplesEmptyBtn').addEventListener('click', () => {
-        queue = [...SAMPLE_REELS];
-        currentIndex = 0;
-        saveQueue();
-        reclaimFocus();
-        renderCurrentReel('next');
-      });
-
-      document.getElementById('playSavedEmptyBtn').addEventListener('click', () => {
-        if (bookmarks.length === 0) {
-          showToast('No saved bookmarks yet!', 'error');
-          return;
-        }
-        queue = bookmarks.map((b) => ({ ...b }));
-        currentIndex = 0;
-        saveQueue();
-        reclaimFocus();
-        renderCurrentReel('next');
-      });
-
-      // Mini Queue Click Selection
-      miniQueueList.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-queue-idx]');
-        if (!btn) return;
-        const idx = Number(btn.dataset.queueIdx);
-        if (!Number.isNaN(idx) && idx !== currentIndex) {
-          const dir = idx > currentIndex ? 'next' : 'prev';
-          currentIndex = idx;
-          renderCurrentReel(dir);
-        }
+      // =========================================================================
+      // 12. EVENT WIRING
+      // =========================================================================
+      // Unmute prompt banner
+      unmutePromptBanner.addEventListener('click', () => {
+        setMutedState(false);
         reclaimFocus();
       });
 
-      // HUD Controls (always reclaim focus on click)
-      prevReelBtn.addEventListener('click', () => {
-        prevReel();
+      focusTrapPill.addEventListener('click', reclaimFocus);
+
+      // HUD Top-left Controls
+      hudPlayPauseBtn.addEventListener('click', () => {
+        togglePlayPause();
         reclaimFocus();
       });
-      nextReelBtn.addEventListener('click', () => {
-        nextReel();
-        reclaimFocus();
-      });
-      bookmarkBtn.addEventListener('click', () => {
-        toggleBookmarkCurrent();
-        reclaimFocus();
-      });
-      muteBtn.addEventListener('click', () => {
+      hudMuteBtn.addEventListener('click', () => {
         toggleMute();
         reclaimFocus();
       });
-      zenBtn.addEventListener('click', () => {
+      volumeSlider.addEventListener('input', (e) => {
+        volumeLevel = Number(e.target.value);
+        if (volumeLevel > 0 && isMuted) {
+          setMutedState(false);
+        }
+        if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+          ytPlayer.setVolume(volumeLevel);
+        }
+      });
+      autoAdvancePill.addEventListener('click', () => {
+        toggleAutoAdvance();
+        reclaimFocus();
+      });
+
+      // Interactive Progress Scrubber
+      scrubberTrack.addEventListener('click', (e) => {
+        if (!ytPlayer || typeof ytPlayer.getDuration !== 'function') return;
+        const rect = scrubberTrack.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const dur = ytPlayer.getDuration();
+        if (dur > 0) {
+          ytPlayer.seekTo(dur * ratio, true);
+        }
+        reclaimFocus();
+      });
+
+      // Right Action Column & Nav Arrows
+      likeActionBtn.addEventListener('click', () => {
+        toggleLikeCurrent();
+        reclaimFocus();
+      });
+      bookmarkActionBtn.addEventListener('click', () => {
+        toggleBookmarkCurrent();
+        reclaimFocus();
+      });
+      subscribePillBtn.addEventListener('click', () => {
+        toggleBookmarkCurrent();
+        reclaimFocus();
+      });
+      loopModeActionBtn.addEventListener('click', () => {
+        toggleAutoAdvance();
+        reclaimFocus();
+      });
+      moreActionBtn.addEventListener('click', () => {
+        addFeedModal.classList.remove('hidden');
+        bulkUrlTextarea.focus();
+      });
+      document.getElementById('prevShortArrowBtn').addEventListener('click', () => {
+        prevShort();
+        reclaimFocus();
+      });
+      document.getElementById('nextShortArrowBtn').addEventListener('click', () => {
+        nextShort();
+        reclaimFocus();
+      });
+
+      // Left Rail & Mobile Nav
+      document.getElementById('brandLogoBtn').addEventListener('click', () => {
+        feedQueue = generateDiscoveryBatch(10);
+        currentIndex = 0;
+        renderCurrentReel('next');
+        showToast('Refreshed endless Shorts feed');
+      });
+      document.getElementById('navFeedBtn').addEventListener('click', () => {
+        drawerOverlay.classList.add('hidden');
+        addFeedModal.classList.add('hidden');
+        reclaimFocus();
+      });
+      document.getElementById('navSavedBtn').addEventListener('click', () => openDrawer('saved'));
+      document.getElementById('mobileSavedBtn').addEventListener('click', () => openDrawer('saved'));
+      document.getElementById('navQueueBtn').addEventListener('click', () => openDrawer('queue'));
+      document.getElementById('navAddBtn').addEventListener('click', () => {
+        addFeedModal.classList.remove('hidden');
+        bulkUrlTextarea.focus();
+      });
+      document.getElementById('mobileAddBtn').addEventListener('click', () => {
+        addFeedModal.classList.remove('hidden');
+        bulkUrlTextarea.focus();
+      });
+      document.getElementById('navZenBtn').addEventListener('click', () => {
         toggleZenMode();
         reclaimFocus();
       });
-      exitZenBtn.addEventListener('click', () => {
+      exitZenPill.addEventListener('click', () => {
         toggleZenMode(false);
         reclaimFocus();
       });
-      removeCurrentBtn.addEventListener('click', () => {
-        removeCurrentFromQueue();
-        reclaimFocus();
-      });
-      focusTrapBanner.addEventListener('click', reclaimFocus);
-
-      // Bookmarks Drawer Controls
-      bookmarksToggleBtn.addEventListener('click', () => {
-        bookmarksOverlay.classList.remove('hidden');
-        renderBookmarksList();
-        reclaimFocus();
-      });
-      closeDrawerBtn.addEventListener('click', () => {
-        bookmarksOverlay.classList.add('hidden');
-        reclaimFocus();
-      });
-      bookmarksBackdrop.addEventListener('click', () => {
-        bookmarksOverlay.classList.add('hidden');
+      document.getElementById('navHelpBtn').addEventListener('click', () => {
+        shortcutsModal.classList.remove('hidden');
         reclaimFocus();
       });
 
-      // Platform Filter Tabs in Drawer
-      document.getElementById('platformFilterGroup').addEventListener('click', (e) => {
-        const tab = e.target.closest('.filter-tab');
-        if (!tab) return;
-        activeFilter = tab.dataset.filter;
-        document.querySelectorAll('.filter-tab').forEach((t) => {
-          t.classList.remove('bg-white/10', 'text-white');
-          t.classList.add('text-zinc-400');
-        });
-        tab.classList.add('bg-white/10', 'text-white');
-        tab.classList.remove('text-zinc-400');
-        renderBookmarksList();
+      // Add Feed Modal Events
+      document.getElementById('closeAddFeedBtn').addEventListener('click', () => {
+        addFeedModal.classList.add('hidden');
+        reclaimFocus();
+      });
+      document.getElementById('addFeedBackdrop').addEventListener('click', () => {
+        addFeedModal.classList.add('hidden');
+        reclaimFocus();
+      });
+      document.getElementById('pasteFromClipboardModalBtn').addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) bulkUrlTextarea.value = text;
+        } catch (e) {
+          bulkUrlTextarea.focus();
+          showToast('Press Ctrl+V to paste links');
+        }
       });
 
-      // Play All Bookmarks
-      playAllBookmarksBtn.addEventListener('click', () => {
-        if (bookmarks.length === 0) {
-          showToast('No bookmarks to play', 'error');
+      document.getElementById('addFeedForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = bulkUrlTextarea.value.trim();
+        if (!raw) return;
+
+        const { items, foundPlaylistId } = parseInputLines(raw);
+
+        if (foundPlaylistId) {
+          const plItem = {
+            uid: `pl_${foundPlaylistId}_${Date.now()}`,
+            id: `pl_${foundPlaylistId}`,
+            platform: 'youtube_playlist',
+            playlistId: foundPlaylistId,
+            originalUrl: `https://www.youtube.com/playlist?list=${foundPlaylistId}`,
+            title: `YouTube Playlist (${foundPlaylistId})`,
+            author: '@YouTubePlaylist',
+            topic: 'playlist'
+          };
+          feedQueue.splice(currentIndex, 0, plItem);
+          bulkUrlTextarea.value = '';
+          addFeedModal.classList.add('hidden');
+          renderCurrentReel('next');
+          showToast('Loaded YouTube Playlist into continuous player');
           return;
         }
-        queue = bookmarks.map((b) => ({ ...b }));
-        currentIndex = 0;
-        saveQueue();
-        bookmarksOverlay.classList.add('hidden');
-        reclaimFocus();
-        showToast(`Playing ${queue.length} saved reels`);
+
+        if (items.length === 0) {
+          showToast('No valid YouTube Shorts, Playlist, or Facebook Reel links found');
+          return;
+        }
+
+        feedQueue.splice(currentIndex, 0, ...items);
+        bulkUrlTextarea.value = '';
+        addFeedModal.classList.add('hidden');
         renderCurrentReel('next');
+        showToast(`Loaded ${items.length} reel${items.length === 1 ? '' : 's'} into feed`);
       });
 
-      // Bookmark Item Actions (Play, Edit Title/Note, Delete)
-      bookmarksList.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
+      toggleDiscoveryModeBtn.addEventListener('click', () => {
+        endlessDiscoveryEnabled = !endlessDiscoveryEnabled;
+        toggleDiscoveryModeBtn.textContent = endlessDiscoveryEnabled ? 'ON' : 'OFF';
+        toggleDiscoveryModeBtn.className = endlessDiscoveryEnabled
+          ? 'px-3 py-1 rounded-full bg-[#FF0033] text-white text-[11px] font-bold transition-all'
+          : 'px-3 py-1 rounded-full bg-[#242424] text-zinc-400 text-[11px] font-bold transition-all';
+      });
+
+      document.getElementById('topicPillsContainer').addEventListener('click', (e) => {
+        const pill = e.target.closest('.topic-pill');
+        if (!pill) return;
+        activeTopic = pill.dataset.topic;
+        document.querySelectorAll('.topic-pill').forEach((p) => {
+          p.className = 'topic-pill px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] text-zinc-300 text-xs font-medium transition-all';
+        });
+        pill.className = 'topic-pill px-3 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all';
+
+        // Regenerate upcoming feed with selected topic
+        feedQueue = feedQueue.slice(0, currentIndex + 1).concat(generateDiscoveryBatch(10));
+        updateCounters();
+        showToast(`Topic set: ${pill.textContent}`);
+      });
+
+      // Drawer Events
+      document.getElementById('closeDrawerBtn').addEventListener('click', () => {
+        drawerOverlay.classList.add('hidden');
+        reclaimFocus();
+      });
+      document.getElementById('drawerBackdrop').addEventListener('click', () => {
+        drawerOverlay.classList.add('hidden');
+        reclaimFocus();
+      });
+      document.getElementById('drawerTabSaved').addEventListener('click', () => switchDrawerTab('saved'));
+      document.getElementById('drawerTabQueue').addEventListener('click', () => switchDrawerTab('queue'));
+
+      bookmarkSearchInput.addEventListener('input', (e) => {
+        savedSearchQuery = e.target.value;
+        renderBookmarksList();
+      });
+
+      document.getElementById('savedFilterPills').addEventListener('click', (e) => {
+        const btn = e.target.closest('.saved-filter');
         if (!btn) return;
-        const action = btn.dataset.action;
+        savedFilter = btn.dataset.filter;
+        document.querySelectorAll('.saved-filter').forEach((b) => {
+          b.className = 'saved-filter px-2.5 py-1 rounded-full bg-[#141414] text-zinc-400 hover:text-white text-[11px] font-medium';
+        });
+        btn.className = 'saved-filter px-2.5 py-1 rounded-full bg-white text-black text-[11px] font-bold';
+        renderBookmarksList();
+      });
+
+      document.getElementById('playSavedQueueBtn').addEventListener('click', () => {
+        if (bookmarks.length === 0) {
+          showToast('No saved reels yet');
+          return;
+        }
+        feedQueue = bookmarks.map((b) => ({ ...b, uid: `${b.id}_${Date.now()}` }));
+        currentIndex = 0;
+        drawerOverlay.classList.add('hidden');
+        renderCurrentReel('next');
+        showToast(`Playing ${feedQueue.length} saved reels`);
+      });
+
+      bookmarksContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-bm-action]');
+        if (!btn) return;
+        const action = btn.dataset.bmAction;
         const id = btn.dataset.id;
-        const itemIndex = bookmarks.findIndex((b) => b.id === id);
-        if (itemIndex === -1) return;
+        const idx = bookmarks.findIndex((b) => b.id === id);
+        if (idx === -1) return;
 
         if (action === 'play') {
-          const item = bookmarks[itemIndex];
-          const existingInQueueIdx = queue.findIndex((q) => q.id === item.id);
-          if (existingInQueueIdx !== -1) {
-            currentIndex = existingInQueueIdx;
-          } else {
-            queue.splice(currentIndex, 0, { ...item });
-          }
-          saveQueue();
-          bookmarksOverlay.classList.add('hidden');
-          reclaimFocus();
+          const item = { ...bookmarks[idx], uid: `${bookmarks[idx].id}_${Date.now()}` };
+          feedQueue.splice(currentIndex, 0, item);
+          drawerOverlay.classList.add('hidden');
           renderCurrentReel('next');
         } else if (action === 'delete') {
-          bookmarks.splice(itemIndex, 1);
+          bookmarks.splice(idx, 1);
           saveBookmarks();
-          showToast('Bookmark deleted');
-        } else if (action === 'edit') {
-          // Inline edit modal replacement using a clean inline form inside the card
-          const card = btn.closest('.group');
-          const item = bookmarks[itemIndex];
-          card.innerHTML = `
-            <div class="space-y-2">
-              <input type="text" data-edit-title class="w-full px-2.5 py-1.5 rounded-lg bg-black/50 border border-white/15 text-xs text-white outline-none focus:border-indigo-500 select-text" value="${escapeHtml(item.title)}" placeholder="Title" />
-              <input type="text" data-edit-note class="w-full px-2.5 py-1.5 rounded-lg bg-black/50 border border-white/15 text-xs text-zinc-200 outline-none focus:border-indigo-500 select-text" value="${escapeHtml(item.note || '')}" placeholder="Optional note or tag..." />
-              <div class="flex justify-end gap-1.5">
-                <button type="button" data-cancel-edit class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300">Cancel</button>
-                <button type="button" data-save-edit class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[11px] font-medium text-white">Save</button>
-              </div>
-            </div>
-          `;
-          const titleField = card.querySelector('[data-edit-title]');
-          const noteField = card.querySelector('[data-edit-note]');
-          titleField.focus();
-
-          card.querySelector('[data-cancel-edit]').addEventListener('click', () => {
-            renderBookmarksList();
-          });
-
-          card.querySelector('[data-save-edit]').addEventListener('click', () => {
-            const newTitle = titleField.value.trim() || item.title;
-            const newNote = noteField.value.trim();
-            bookmarks[itemIndex].title = newTitle;
-            bookmarks[itemIndex].note = newNote;
-
-            // Also update in active queue if present
-            const qItem = queue.find((q) => q.id === item.id);
-            if (qItem) {
-              qItem.title = newTitle;
-              qItem.note = newNote;
-              saveQueue();
-              updateQueueMetaUI();
-            }
-
-            saveBookmarks();
-            showToast('Bookmark updated');
-          });
+          updateActionButtonsState();
+          showToast('Bookmark removed');
         }
       });
 
-      // Export Bookmarks as JSON
-      exportBookmarksBtn.addEventListener('click', () => {
+      queueListContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-queue-index]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.queueIndex);
+        if (!Number.isNaN(idx)) {
+          const dir = idx >= currentIndex ? 'next' : 'prev';
+          currentIndex = idx;
+          drawerOverlay.classList.add('hidden');
+          renderCurrentReel(dir);
+        }
+      });
+
+      document.getElementById('shuffleQueueBtn').addEventListener('click', () => {
+        const current = feedQueue[currentIndex];
+        const rest = shuffleArray(feedQueue.filter((_, i) => i !== currentIndex));
+        feedQueue = current ? [current, ...rest] : rest;
+        currentIndex = 0;
+        renderQueueList();
+        showToast('Shuffled upcoming Shorts');
+      });
+
+      // JSON Export / Import
+      document.getElementById('exportJsonBtn').addEventListener('click', () => {
         if (bookmarks.length === 0) {
-          showToast('No bookmarks to export', 'error');
+          showToast('No bookmarks to export');
           return;
         }
         const blob = new Blob([JSON.stringify(bookmarks, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `reeldeck-bookmarks-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `oled-shorts-bookmarks-${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -1749,85 +2093,59 @@
         showToast('Exported bookmarks JSON');
       });
 
-      // Import Bookmarks from JSON
-      importBookmarksInput.addEventListener('change', (e) => {
+      document.getElementById('importJsonInput').addEventListener('change', (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (ev) => {
           try {
-            const imported = JSON.parse(event.target.result);
-            if (!Array.isArray(imported)) throw new Error('Invalid format');
-
-            let addedCount = 0;
-            for (const item of imported) {
-              if (item && item.originalUrl && item.platform) {
-                const exists = bookmarks.some((b) => b.originalUrl === item.originalUrl);
-                if (!exists) {
-                  bookmarks.push({
-                    id: item.id || `${item.platform}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-                    platform: item.platform,
-                    videoId: item.videoId || '',
-                    originalUrl: item.originalUrl,
-                    title: item.title || 'Imported Reel',
-                    note: item.note || '',
-                    savedAt: item.savedAt || Date.now()
-                  });
-                  addedCount++;
-                }
+            const data = JSON.parse(ev.target.result);
+            if (!Array.isArray(data)) throw new Error();
+            let count = 0;
+            for (const item of data) {
+              if (item && item.originalUrl && !bookmarks.some((b) => b.originalUrl === item.originalUrl)) {
+                bookmarks.push(item);
+                count++;
               }
             }
             saveBookmarks();
-            showToast(`Imported ${addedCount} new bookmark${addedCount === 1 ? '' : 's'}`);
+            showToast(`Imported ${count} bookmark${count === 1 ? '' : 's'}`);
           } catch (err) {
-            showToast('Invalid JSON backup file', 'error');
+            showToast('Invalid JSON file');
           }
-          importBookmarksInput.value = '';
+          e.target.value = '';
         };
         reader.readAsText(file);
       });
 
-      // Shortcuts Modal Controls
-      helpBtn.addEventListener('click', () => {
-        shortcutsModal.classList.remove('hidden');
-        reclaimFocus();
-      });
-      closeShortcutsBtn.addEventListener('click', () => {
+      // Shortcuts Modal Close
+      document.getElementById('closeShortcutsBtn').addEventListener('click', () => {
         shortcutsModal.classList.add('hidden');
         reclaimFocus();
       });
-      shortcutsBackdrop.addEventListener('click', () => {
+      document.getElementById('shortcutsBackdrop').addEventListener('click', () => {
         shortcutsModal.classList.add('hidden');
         reclaimFocus();
       });
 
-      // Mouse Wheel Quick Navigation on Outer Theater Area
-      let wheelCooldown = false;
-      document.getElementById('theaterMain').addEventListener(
-        'wheel',
-        (e) => {
-          if (wheelCooldown) return;
-          if (Math.abs(e.deltaY) > 35) {
-            wheelCooldown = true;
-            if (e.deltaY > 0) nextReel();
-            else prevReel();
-            setTimeout(() => {
-              wheelCooldown = false;
-            }, 350);
-          }
-        },
-        { passive: true }
-      );
-
-      // ==========================================
+      // =========================================================================
       // 13. INITIALIZATION
-      // ==========================================
-      loadStateFromStorage();
-      updateBookmarkUI();
-      updateMuteIconUI();
+      // =========================================================================
+      try {
+        bookmarks = JSON.parse(localStorage.getItem(STORAGE_BOOKMARKS) || '[]');
+        likedIds = new Set(JSON.parse(localStorage.getItem(STORAGE_LIKED) || '[]'));
+      } catch (e) {
+        bookmarks = [];
+        likedIds = new Set();
+      }
+
+      feedQueue = generateDiscoveryBatch(12);
+      currentIndex = 0;
+      updateCounters();
+      updateMuteIcon();
+      updateAutoAdvanceUI();
+      unmutePromptBanner.classList.remove('hidden');
       renderCurrentReel('none');
-      startFocusMonitor();
     })();
   </script>
 </body>
