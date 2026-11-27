@@ -1048,44 +1048,6 @@
         renderPlaylistItems();
         showToast(`Resolved ${resolvedCount} new canonical URLs (${Object.keys(resolvedCache).length} total cached)`);
       }
-      }
-
-      /**
-       * Restores playlist, playback index, and filter preference from localStorage.
-       */
-      function loadState() {
-        try {
-          strictReelsOnly = localStorage.getItem(STORAGE_KEYS.STRICT_MODE) === '1';
-          updateFilterScopeUI();
-
-          const savedList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLAYLIST) || '[]');
-          const savedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.INDEX) || '0', 10);
-
-          if (Array.isArray(savedList)) {
-            // Normalize legacy string entries if any exist
-            playlist = savedList.map((item) => {
-              if (typeof item === 'string') {
-                return {
-                  url: item,
-                  title: cleanReelTitle('', item),
-                  thumbnailUrl: '',
-                  type: /\/(share\/r|reels?)\//i.test(item) ? 'reel' : 'video'
-                };
-              }
-              return item;
-            });
-          }
-
-          if (!Number.isNaN(savedIndex) && savedIndex >= 0 && savedIndex < playlist.length) {
-            currentIndex = savedIndex;
-          } else {
-            currentIndex = 0;
-          }
-        } catch (_) {
-          playlist = [];
-          currentIndex = 0;
-        }
-      }
 
       /**
        * Updates the visual toggle buttons for Filter Scope ("Reels + /v/" vs "Strict /r/").
@@ -1552,6 +1514,40 @@
       });
 
       els.batchResolveBtn.addEventListener('click', batchResolvePlaylist);
+
+      // Drawer & Import Event Listeners
+      els.toggleDrawerBtn.addEventListener('click', () => toggleDrawer());
+      els.closeDrawerBtn.addEventListener('click', () => toggleDrawer(false));
+      els.drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
+
+      els.importJsonFileBtn.addEventListener('click', () => els.jsonFileInput.click());
+      els.emptyImportJsonBtn.addEventListener('click', () => els.jsonFileInput.click());
+      els.jsonFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleJsonFileUpload(file);
+      });
+
+      els.scopeReelsAndVideosBtn.addEventListener('click', () => {
+        strictReelsOnly = false;
+        updateFilterScopeUI();
+        saveState();
+      });
+
+      els.scopeStrictReelsBtn.addEventListener('click', () => {
+        strictReelsOnly = true;
+        updateFilterScopeUI();
+        saveState();
+      });
+
+      els.appendLinksBtn.addEventListener('click', () => addUrlsFromTextarea(false));
+      els.replaceLinksBtn.addEventListener('click', () => addUrlsFromTextarea(true));
+      els.exportTxtBtn.addEventListener('click', exportPlaylistTxt);
+
+      els.loadSampleBtn.addEventListener('click', () => {
+        playlist = SAMPLE_REELS.map((item) => ({ ...item }));
+        currentIndex = 0;
+        saveState();
+        renderPlayer();
         showToast('Loaded sample Facebook Reels');
       });
 
